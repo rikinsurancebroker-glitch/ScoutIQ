@@ -3,8 +3,14 @@ import { prisma } from '../lib/prisma'
 import { emailQueue } from '../queues/queues'
 import type { EmailJobData } from '../queues/queues'
 import { addHours } from 'date-fns'
+import { isEmailEnabled } from '../lib/email'
 
 export async function runReminderEmails(): Promise<void> {
+  if (!isEmailEnabled()) {
+    console.log('[ReminderEmails] Email disabled — skipping')
+    return
+  }
+
   console.log('[ReminderEmails] Checking for sites expiring within 24-48 hours...')
 
   const now = new Date()
@@ -50,6 +56,11 @@ export async function runReminderEmails(): Promise<void> {
 }
 
 export function startReminderJob(): void {
+  if (!isEmailEnabled()) {
+    console.log('[ReminderEmails] Email disabled — reminder cron not scheduled')
+    return
+  }
+
   cron.schedule('0 10 * * *', async () => {
     console.log('[ReminderEmails] Cron triggered at 10:00 AM')
     await runReminderEmails()

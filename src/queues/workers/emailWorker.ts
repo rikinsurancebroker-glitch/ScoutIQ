@@ -1,22 +1,10 @@
 import { Worker, Job } from 'bullmq'
-import nodemailer from 'nodemailer'
 import { getBullMQConnection } from '../../lib/redis'
 import { prisma } from '../../lib/prisma'
 import { supabase } from '../../lib/supabase'
 import { openai } from '../../lib/openai'
+import { createTransporter, isEmailEnabled } from '../../lib/email'
 import type { EmailJobData } from '../queues'
-
-function createTransporter() {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT ?? '587'),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  })
-}
 
 async function generateEmailContent(
   businessName: string,
@@ -73,6 +61,11 @@ Return JSON with exactly these fields:
 }
 
 async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
+  if (!isEmailEnabled()) {
+    console.log(`[EmailWorker] Email disabled — skipping job ${job.id}`)
+    return
+  }
+
   const { businessId, type } = job.data
 
   const business = await prisma.business.findUnique({

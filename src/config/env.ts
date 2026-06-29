@@ -12,18 +12,36 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().min(1, 'GOOGLE_CLIENT_SECRET is required'),
   FRONTEND_URL: z.string().url('FRONTEND_URL must be a valid URL'),
   API_URL: z.string().url('API_URL must be a valid URL'),
-  SMTP_HOST: z.string().min(1, 'SMTP_HOST is required'),
-  SMTP_PORT: z.string().regex(/^\d+$/, 'SMTP_PORT must be a number'),
-  SMTP_USER: z.string().min(1, 'SMTP_USER is required'),
-  SMTP_PASS: z.string().min(1, 'SMTP_PASS is required'),
-  SMTP_FROM: z.string().min(1, 'SMTP_FROM is required'),
+  EMAIL_ENABLED: z.enum(['true', 'false']).default('false'),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().optional(),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().optional(),
   PORT: z.string().default('4000'),
   SCORE_THRESHOLD: z.string().default('50'),
   SITE_EXPIRY_DAYS: z.string().default('7'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  USE_LOCAL_TEMPLATES: z.enum(['true', 'false']).optional(),
 })
 
 const parsed = envSchema.safeParse(process.env)
+
+const emailEnabled = parsed.success && parsed.data.EMAIL_ENABLED === 'true'
+if (emailEnabled) {
+  const missing: string[] = []
+  const d = parsed.data!
+  if (!d.SMTP_HOST) missing.push('SMTP_HOST')
+  if (!d.SMTP_PORT || !/^\d+$/.test(d.SMTP_PORT)) missing.push('SMTP_PORT')
+  if (!d.SMTP_USER) missing.push('SMTP_USER')
+  if (!d.SMTP_PASS) missing.push('SMTP_PASS')
+  if (!d.SMTP_FROM) missing.push('SMTP_FROM')
+  if (missing.length > 0) {
+    console.error('[Config] EMAIL_ENABLED=true but missing SMTP configuration:')
+    missing.forEach((key) => console.error(`  - ${key}`))
+    process.exit(1)
+  }
+}
 
 if (!parsed.success) {
   console.error('[Config] Missing or invalid environment variables:')

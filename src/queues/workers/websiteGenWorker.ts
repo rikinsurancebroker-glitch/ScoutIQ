@@ -5,21 +5,10 @@ import { getBullMQConnection } from '../../lib/redis'
 import { prisma } from '../../lib/prisma'
 import { supabase } from '../../lib/supabase'
 import { pickTemplate, generateSiteContent } from '../../services/websiteGeneratorService'
+import { getTemplateUrl } from '../../config/templates'
 import { emailQueue } from '../queues'
+import { isEmailEnabled } from '../../lib/email'
 import type { WebsiteGenJobData, EmailJobData } from '../queues'
-
-const TEMPLATES: Record<string, string> = {
-  'restaurant-01': 'https://scoutiq-restaurant-01.vercel.app',
-  'restaurant-02': 'https://scoutiq-restaurant-02.vercel.app',
-  'clinic-01': 'https://scoutiq-clinic-01.vercel.app',
-  'salon-01': 'https://scoutiq-salon-01.vercel.app',
-  'gym-01': 'https://scoutiq-gym-01.vercel.app',
-  'retail-01': 'https://scoutiq-retail-01.vercel.app',
-  'law-01': 'https://scoutiq-law-01.vercel.app',
-  'cafe-01': 'https://scoutiq-cafe-01.vercel.app',
-  'education-01': 'https://scoutiq-education-01.vercel.app',
-  'default-01': 'https://scoutiq-default-01.vercel.app',
-}
 
 async function processWebsiteGenJob(job: Job<WebsiteGenJobData>): Promise<void> {
   const { businessId } = job.data
@@ -38,7 +27,7 @@ async function processWebsiteGenJob(job: Job<WebsiteGenJobData>): Promise<void> 
   }
 
   const templateId = pickTemplate(business.category)
-  const templateUrl = TEMPLATES[templateId] ?? TEMPLATES['default-01']
+  const templateUrl = getTemplateUrl(templateId)
 
   const content = await generateSiteContent(business, business.presenceScore)
 
@@ -95,7 +84,7 @@ async function processWebsiteGenJob(job: Job<WebsiteGenJobData>): Promise<void> 
     },
   })
 
-  if (business.email) {
+  if (business.email && isEmailEnabled()) {
     await emailQueue.add(
       `email-${businessId}`,
       { businessId, type: 'EMAIL' } satisfies EmailJobData,
