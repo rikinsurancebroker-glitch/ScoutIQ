@@ -1,0 +1,166 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  name       String
+  avatarUrl  String?
+  provider   String   @default("google")
+  providerId String   @unique
+  createdAt  DateTime @default(now())
+  uploads    Upload[]
+}
+
+model Upload {
+  id            String       @id @default(uuid())
+  userId        String
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName      String
+  storagePath   String
+  totalRows     Int          @default(0)
+  processedRows Int          @default(0)
+  status        UploadStatus @default(PENDING)
+  columnMap     Json?
+  createdAt     DateTime     @default(now())
+  businesses    Business[]
+  jobLogs       JobLog[]
+}
+
+enum UploadStatus {
+  PENDING
+  PROCESSING
+  SCORING
+  DONE
+  FAILED
+}
+
+model Business {
+  id             String    @id @default(uuid())
+  uploadId       String
+  upload         Upload    @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  name           String
+  phone          String?
+  email          String?
+  website        String?
+  address        String?
+  instagram      String?
+  facebook       String?
+  twitter        String?
+  linkedin       String?
+  yelp           String?
+  youtube        String?
+  placeId        String?
+  cid            String?
+  category       String?
+  reviewCount    Int?
+  averageRating  Float?
+  latitude       Float?
+  longitude      Float?
+  hoursMonday    String?
+  hoursTuesday   String?
+  hoursWednesday String?
+  hoursThursday  String?
+  hoursFriday    String?
+  hoursSaturday  String?
+  hoursSunday    String?
+  crmStatus      CrmStatus @default(NOT_CONTACTED)
+  createdAt      DateTime  @default(now())
+
+  presenceScore  PresenceScore?
+  websiteGen     GeneratedWebsite?
+  emailLog       EmailLog?
+}
+
+enum CrmStatus {
+  NOT_CONTACTED
+  EMAIL_SENT
+  REPLIED
+  INTERESTED
+  NEGOTIATING
+  WON
+  LOST
+  SKIPPED
+}
+
+model PresenceScore {
+  id            String   @id @default(uuid())
+  businessId    String   @unique
+  business      Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  total         Int
+  contactScore  Int
+  websiteScore  Int
+  googleScore   Int
+  socialScore   Int
+  reviewScore   Int
+  hoursScore    Int
+  geoScore      Int
+  flags         String[]
+  opportunities String[]
+  scoredAt      DateTime @default(now())
+}
+
+model GeneratedWebsite {
+  id          String     @id @default(uuid())
+  businessId  String     @unique
+  business    Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  siteUrl     String
+  qrUrl       String
+  contentJson Json
+  templateId  String
+  templateUrl String
+  htmlContent String     @default("") @db.Text
+  status      SiteStatus @default(LIVE)
+  expiresAt   DateTime
+  viewCount   Int        @default(0)
+  firstViewAt DateTime?
+  lastViewAt  DateTime?
+  claimedAt   DateTime?
+  deletedAt   DateTime?
+  generatedAt DateTime   @default(now())
+}
+
+enum SiteStatus {
+  LIVE
+  EXTENDED
+  CLAIMED
+  EXPIRED
+  DELETED
+}
+
+model EmailLog {
+  id         String      @id @default(uuid())
+  businessId String      @unique
+  business   Business    @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  toEmail    String
+  subject    String
+  bodyHtml   String      @db.Text
+  status     EmailStatus @default(PENDING)
+  sentAt     DateTime?
+  createdAt  DateTime    @default(now())
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+  BOUNCED
+}
+
+model JobLog {
+  id         String    @id @default(uuid())
+  uploadId   String
+  upload     Upload    @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  jobType    String
+  status     String
+  errorMsg   String?
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+}
