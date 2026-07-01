@@ -8,7 +8,8 @@ async function test(label, url) {
     console.log(`${label}: OK`)
     return true
   } catch (e) {
-    console.log(`${label}: FAIL - ${e.message.split('\n').find((l) => l.includes("Can't") || l.includes('P1001')) || e.message.split('\n')[0]}`)
+    const line = e.message.split('\n').find((l) => l.includes("Can't") || l.includes('P1001')) || e.message.split('\n')[0]
+    console.log(`${label}: FAIL - ${line}`)
     return false
   } finally {
     await p.$disconnect()
@@ -16,12 +17,9 @@ async function test(label, url) {
 }
 
 async function main() {
-  await test('DATABASE_URL (pooler 6543)', process.env.DATABASE_URL)
-  await test('DIRECT_URL', process.env.DIRECT_URL)
-
-  const sessionPooler = process.env.DATABASE_URL?.replace(':6543', ':5432').replace('?pgbouncer=true', '')
-  if (sessionPooler) {
-    await test('Session pooler (5432)', sessionPooler)
+  await test('DATABASE_URL', process.env.DATABASE_URL)
+  if (process.env.DIRECT_URL && process.env.DIRECT_URL !== process.env.DATABASE_URL) {
+    await test('DIRECT_URL', process.env.DIRECT_URL)
   }
 }
 

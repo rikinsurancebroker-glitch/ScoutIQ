@@ -16,15 +16,20 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/dashboard/uploads/[id]/page": [
+    "/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/dashboard/uploads/[id]/page.js"
+      "static/chunks/app/page.js"
     ],
     "/dashboard/uploads/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/uploads/page.js"
+    ],
+    "/dashboard/uploads/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/dashboard/uploads/[id]/page.js"
     ]
   }
 }
