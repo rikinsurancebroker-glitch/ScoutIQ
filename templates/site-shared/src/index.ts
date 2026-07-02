@@ -1,4 +1,6 @@
 export { SitePage } from './SitePage'
 export { fetchSiteContent } from './fetch'
+export { ExpiredPage, Nav, Footer } from './components/Footer'
+export { resolveColors, cardRadius } from './utils'
 export type { SiteContent, SiteTheme } from './types'
 export { themes } from './themes'
