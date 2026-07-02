@@ -17,6 +17,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "fix:local-urls": "node scripts/fix-local-template-urls.js",
+    "fix:production-urls": "node scripts/fix-production-template-urls.js",
     "check:pipeline": "node scripts/check-pipeline.js"
   },
   "dependencies": {
