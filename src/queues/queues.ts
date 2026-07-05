@@ -25,6 +25,7 @@ export interface WebsiteGenJobData {
 export interface EmailJobData {
   businessId: string
   type: 'EMAIL' | 'REMINDER'
+  scheduledFor?: string // ISO string — if set, pg-boss delays until this time
 }
 
 const SEND_OPTS = {
@@ -68,6 +69,7 @@ export async function enqueueEmail(data: EmailJobData): Promise<void> {
   await boss.send(QUEUE_NAMES.EMAIL, data, {
     ...SEND_OPTS.email,
     singletonKey: `${data.type}-${data.businessId}`,
+    ...(data.scheduledFor ? { startAfter: new Date(data.scheduledFor) } : {}),
   })
 }
 
@@ -80,6 +82,7 @@ export async function enqueueEmailBulk(jobs: EmailJobData[]): Promise<void> {
       data,
       singletonKey: `${data.type}-${data.businessId}-${i}`,
       ...SEND_OPTS.email,
+      ...(data.scheduledFor ? { startAfter: new Date(data.scheduledFor) } : {}),
     }))
   )
 }

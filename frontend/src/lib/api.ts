@@ -208,3 +208,35 @@ export const dashboardApi = {
   expiryStats: () =>
     api.get<ExpiryStats>('/api/dashboard/expiry-stats').then((r) => r.data),
 }
+
+// ─── Outreach / Admin ─────────────────────────────────────────────────────────
+
+export interface OutreachBusiness {
+  id: string
+  name: string
+  email: string | null
+  category: string | null
+  address: string | null
+  crmStatus: CrmStatus
+  presenceScore: { total: number } | null
+  websiteGen: { siteUrl: string; status: SiteStatus; expiresAt: string } | null
+  emailLog: { status: EmailStatus; sentAt: string | null } | null
+}
+
+export const adminApi = {
+  outreachReady: () =>
+    api.get<OutreachBusiness[]>('/api/admin/outreach-ready').then((r) => r.data),
+
+  scheduleEmails: (businessIds: string[], scheduledFor?: string) =>
+    api
+      .post<{ scheduled: number; scheduledFor: string; message: string }>(
+        '/api/admin/schedule-emails',
+        { businessIds, scheduledFor }
+      )
+      .then((r) => r.data),
+
+  backfillWebsites: (threshold = 60) =>
+    api
+      .post<{ enqueued: number; total: number }>(`/api/admin/backfill-websites?threshold=${threshold}`)
+      .then((r) => r.data),
+}
