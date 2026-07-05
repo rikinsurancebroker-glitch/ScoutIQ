@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { supabase } from '../lib/supabase'
-import { csvParseQueue } from '../queues/queues'
+import { enqueueCsvParse } from '../queues/queues'
 import { requireAuth } from '../middleware/auth'
 import type { ParseJobData } from '../queues/queues'
 
@@ -68,18 +68,11 @@ router.post('/:id/confirm', async (req: Request, res: Response) => {
     return
   }
 
-  await csvParseQueue.add(
-    `parse-${upload.id}`,
-    {
-      uploadId: upload.id,
-      userId,
-      storagePath: upload.storagePath,
-    } satisfies ParseJobData,
-    {
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 1000 },
-    }
-  )
+  await enqueueCsvParse({
+    uploadId: upload.id,
+    userId,
+    storagePath: upload.storagePath,
+  } satisfies ParseJobData)
 
   res.status(202).json({ message: 'Processing started', uploadId: upload.id })
 })

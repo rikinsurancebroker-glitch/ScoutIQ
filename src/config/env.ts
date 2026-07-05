@@ -3,7 +3,6 @@ import { z } from 'zod'
 const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   DIRECT_URL: z.string().min(1, 'DIRECT_URL is required'),
-  REDIS_URL: z.string().min(1, 'REDIS_URL is required'),
   SUPABASE_URL: z.string().url('SUPABASE_URL must be a valid URL'),
   SUPABASE_SERVICE_KEY: z.string().min(1, 'SUPABASE_SERVICE_KEY is required'),
   OPENAI_API_KEY: z.string().min(1, 'OPENAI_API_KEY is required'),

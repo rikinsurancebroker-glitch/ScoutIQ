@@ -1,5 +1,3 @@
-import { Worker, Job } from 'bullmq'
-import { getBullMQConnection } from '../../lib/redis'
 import { prisma } from '../../lib/prisma'
 import { supabase } from '../../lib/supabase'
 import { openai } from '../../lib/openai'
@@ -60,13 +58,13 @@ Return JSON with exactly these fields:
   }
 }
 
-async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
+export async function processEmailJob(data: EmailJobData): Promise<void> {
   if (!isEmailEnabled()) {
-    console.log(`[EmailWorker] Email disabled — skipping job ${job.id}`)
+    console.log(`[EmailWorker] Email disabled — skipping job for ${data.businessId}`)
     return
   }
 
-  const { businessId, type } = job.data
+  const { businessId, type } = data
 
   const business = await prisma.business.findUnique({
     where: { id: businessId },
@@ -237,26 +235,10 @@ async function processEmailJob(job: Job<EmailJobData>): Promise<void> {
   })
 }
 
-const emailWorker = new Worker<EmailJobData>('email', processEmailJob, {
-  connection: getBullMQConnection(),
-  concurrency: 2,
-})
-
-emailWorker.on('failed', async (job, err) => {
-  if (!job) return
-  console.error(`[EmailWorker] Job ${job.id} failed:`, err.message)
-
-  const { businessId } = job.data
+export async function handleEmailFailure(businessId: string, errorMsg: string): Promise<void> {
+  console.error(`[EmailWorker] Job failed for ${businessId}:`, errorMsg)
   await prisma.emailLog.updateMany({
     where: { businessId, status: 'PENDING' },
     data: { status: 'FAILED' },
   })
-})
-
-emailWorker.on('completed', (job) => {
-  console.log(`[EmailWorker] Job ${job.id} completed`)
-})
-
-console.log('[EmailWorker] Started — concurrency 2')
-
-export default emailWorker
+}

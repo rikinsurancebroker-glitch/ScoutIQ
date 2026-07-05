@@ -1,14 +1,16 @@
 import 'dotenv/config'
 import '../config/env'
-import './workers/parseWorker'
-import './workers/scoreWorker'
-import './workers/websiteGenWorker'
-import './workers/emailWorker'
+import { registerWorkers } from './registerWorkers'
+import { stopBoss } from '../lib/jobQueue'
 
-console.log('[Workers] All 4 workers started')
+registerWorkers().catch((err) => {
+  console.error('[Workers] Failed to start:', err)
+  process.exit(1)
+})
 
 process.on('SIGTERM', async () => {
   console.log('[Workers] Shutting down gracefully...')
+  await stopBoss()
   process.exit(0)
 })
 

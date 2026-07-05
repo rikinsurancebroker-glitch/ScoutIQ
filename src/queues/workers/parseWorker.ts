@@ -1,9 +1,7 @@
-import { Worker, Job } from 'bullmq'
 import Papa from 'papaparse'
-import { getBullMQConnection } from '../../lib/redis'
 import { prisma } from '../../lib/prisma'
 import { supabase } from '../../lib/supabase'
-import { scoringQueue } from '../queues'
+import { enqueueScoringJobs } from '../queues'
 import type { ParseJobData, ScoreJobData } from '../queues'
 
 const COLUMN_ALIASES: Record<string, string> = {
@@ -155,8 +153,8 @@ function mapRow(raw: Record<string, string>): MappedRow | null {
   return mapped as unknown as MappedRow
 }
 
-async function processParseJob(job: Job<ParseJobData>): Promise<void> {
-  const { uploadId, storagePath } = job.data
+export async function processParseJob(data: ParseJobData): Promise<void> {
+  const { uploadId, storagePath } = data
   const startedAt = new Date()
 
   await prisma.upload.update({
@@ -200,7 +198,6 @@ async function processParseJob(job: Job<ParseJobData>): Promise<void> {
   })
 
   const CHUNK_SIZE = 50
-  const insertedIds: string[] = []
 
   for (let i = 0; i < mappedRows.length; i += CHUNK_SIZE) {
     const chunk = mappedRows.slice(i, i + CHUNK_SIZE)
@@ -250,18 +247,12 @@ async function processParseJob(job: Job<ParseJobData>): Promise<void> {
     select: { id: true },
   })
 
-  const scoreJobs = businesses.map((b) => ({
-    name: `score-${b.id}`,
-    data: { businessId: b.id, uploadId } satisfies ScoreJobData,
-    opts: {
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 2000 },
-    },
+  const scoreJobs: ScoreJobData[] = businesses.map((b) => ({
+    businessId: b.id,
+    uploadId,
   }))
 
-  if (scoreJobs.length > 0) {
-    await scoringQueue.addBulk(scoreJobs)
-  }
+  await enqueueScoringJobs(scoreJobs)
 
   await prisma.upload.update({
     where: { id: uploadId },
@@ -279,16 +270,12 @@ async function processParseJob(job: Job<ParseJobData>): Promise<void> {
   })
 }
 
-const parseWorker = new Worker<ParseJobData>('csv-parse', processParseJob, {
-  connection: getBullMQConnection(),
-  concurrency: 2,
-})
+export async function handleParsePermanentFailure(
+  data: ParseJobData,
+  errorMsg: string
+): Promise<void> {
+  const { uploadId } = data
 
-parseWorker.on('failed', async (job, err) => {
-  if (!job) return
-  console.error(`[ParseWorker] Job ${job.id} failed permanently:`, err.message)
-
-  const { uploadId } = job.data
   await prisma.upload.update({
     where: { id: uploadId },
     data: { status: 'FAILED' },
@@ -299,15 +286,7 @@ parseWorker.on('failed', async (job, err) => {
       uploadId,
       jobType: 'csv-parse',
       status: 'failed',
-      errorMsg: err.message,
+      errorMsg,
     },
   })
-})
-
-parseWorker.on('completed', (job) => {
-  console.log(`[ParseWorker] Job ${job.id} completed`)
-})
-
-console.log('[ParseWorker] Started — concurrency 2')
-
-export default parseWorker
+}

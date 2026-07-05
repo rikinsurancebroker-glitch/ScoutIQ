@@ -1,6 +1,6 @@
 import cron from 'node-cron'
 import { prisma } from '../lib/prisma'
-import { emailQueue } from '../queues/queues'
+import { enqueueEmailBulk } from '../queues/queues'
 import type { EmailJobData } from '../queues/queues'
 import { addHours } from 'date-fns'
 import { isEmailEnabled } from '../lib/email'
@@ -40,17 +40,13 @@ export async function runReminderEmails(): Promise<void> {
 
   console.log(`[ReminderEmails] Found ${expiringSites.length} sites to remind`)
 
-  const jobs = expiringSites.map((site) => ({
-    name: `reminder-${site.businessId}-${Date.now()}`,
-    data: { businessId: site.businessId, type: 'REMINDER' } satisfies EmailJobData,
-    opts: {
-      attempts: 3,
-      backoff: { type: 'exponential', delay: 5000 },
-    },
+  const jobs: EmailJobData[] = expiringSites.map((site) => ({
+    businessId: site.businessId,
+    type: 'REMINDER',
   }))
 
   if (jobs.length > 0) {
-    await emailQueue.addBulk(jobs)
+    await enqueueEmailBulk(jobs)
     console.log(`[ReminderEmails] Enqueued ${jobs.length} reminder email jobs`)
   }
 }

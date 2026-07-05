@@ -6,6 +6,29 @@ import { signToken, requireAuth } from '../middleware/auth'
 
 const router = Router()
 
+function authCookieOptions() {
+  const isProduction = process.env.NODE_ENV === 'production'
+  const frontendUrl = process.env.FRONTEND_URL ?? ''
+  const apiUrl = process.env.API_URL ?? ''
+  let crossOrigin = false
+
+  try {
+    crossOrigin =
+      isProduction &&
+      Boolean(frontendUrl && apiUrl) &&
+      new URL(frontendUrl).origin !== new URL(apiUrl).origin
+  } catch {
+    crossOrigin = isProduction
+  }
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: (crossOrigin ? 'none' : 'lax') as 'none' | 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  }
+}
+
 passport.use(
   new GoogleStrategy(
     {
@@ -78,12 +101,7 @@ router.get(
       name: user.name,
     })
 
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    })
+    res.cookie('token', token, authCookieOptions())
 
     res.redirect(`${process.env.FRONTEND_URL}/dashboard`)
   }
@@ -94,7 +112,7 @@ router.get('/failed', (_req: Request, res: Response) => {
 })
 
 router.post('/logout', (_req: Request, res: Response) => {
-  res.clearCookie('token')
+  res.clearCookie('token', authCookieOptions())
   res.json({ message: 'Logged out successfully' })
 })
 

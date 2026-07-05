@@ -1,17 +1,15 @@
-import { Worker, Job } from 'bullmq'
 import QRCode from 'qrcode'
 import { addDays } from 'date-fns'
-import { getBullMQConnection } from '../../lib/redis'
 import { prisma } from '../../lib/prisma'
 import { supabase } from '../../lib/supabase'
 import { pickTemplate, generateSiteContent } from '../../services/websiteGeneratorService'
 import { getTemplateUrl } from '../../config/templates'
-import { emailQueue } from '../queues'
+import { enqueueEmail } from '../queues'
 import { isEmailEnabled } from '../../lib/email'
-import type { WebsiteGenJobData, EmailJobData } from '../queues'
+import type { WebsiteGenJobData } from '../queues'
 
-async function processWebsiteGenJob(job: Job<WebsiteGenJobData>): Promise<void> {
-  const { businessId } = job.data
+export async function processWebsiteGenJob(data: WebsiteGenJobData): Promise<void> {
+  const { businessId } = data
 
   const business = await prisma.business.findUnique({
     where: { id: businessId },
@@ -85,31 +83,6 @@ async function processWebsiteGenJob(job: Job<WebsiteGenJobData>): Promise<void> 
   })
 
   if (business.email && isEmailEnabled()) {
-    await emailQueue.add(
-      `email-${businessId}`,
-      { businessId, type: 'EMAIL' } satisfies EmailJobData,
-      {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 5000 },
-      }
-    )
+    await enqueueEmail({ businessId, type: 'EMAIL' })
   }
 }
-
-const websiteGenWorker = new Worker<WebsiteGenJobData>('website-gen', processWebsiteGenJob, {
-  connection: getBullMQConnection(),
-  concurrency: 3,
-})
-
-websiteGenWorker.on('failed', (job, err) => {
-  if (!job) return
-  console.error(`[WebsiteGenWorker] Job ${job.id} failed:`, err.message)
-})
-
-websiteGenWorker.on('completed', (job) => {
-  console.log(`[WebsiteGenWorker] Job ${job.id} completed`)
-})
-
-console.log('[WebsiteGenWorker] Started — concurrency 3')
-
-export default websiteGenWorker

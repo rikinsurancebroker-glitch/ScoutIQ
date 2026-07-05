@@ -1,14 +1,12 @@
-import { Worker, Job } from 'bullmq'
-import { getBullMQConnection } from '../../lib/redis'
 import { prisma } from '../../lib/prisma'
 import { scoreBusiness } from '../../services/scoringService'
-import { websiteGenQueue } from '../queues'
-import type { ScoreJobData, WebsiteGenJobData } from '../queues'
+import { enqueueWebsiteGen } from '../queues'
+import type { ScoreJobData } from '../queues'
 
 const SCORE_THRESHOLD = parseInt(process.env.SCORE_THRESHOLD ?? '50')
 
-async function processScoreJob(job: Job<ScoreJobData>): Promise<void> {
-  const { businessId, uploadId } = job.data
+export async function processScoreJob(data: ScoreJobData): Promise<void> {
+  const { businessId, uploadId } = data
 
   const business = await prisma.business.findUnique({
     where: { id: businessId },
@@ -51,14 +49,7 @@ async function processScoreJob(job: Job<ScoreJobData>): Promise<void> {
   })
 
   if (breakdown.total < SCORE_THRESHOLD) {
-    await websiteGenQueue.add(
-      `website-gen-${businessId}`,
-      { businessId } satisfies WebsiteGenJobData,
-      {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 3000 },
-      }
-    )
+    await enqueueWebsiteGen({ businessId })
   } else {
     await prisma.business.update({
       where: { id: businessId },
@@ -81,21 +72,3 @@ async function processScoreJob(job: Job<ScoreJobData>): Promise<void> {
     })
   }
 }
-
-const scoreWorker = new Worker<ScoreJobData>('scoring', processScoreJob, {
-  connection: getBullMQConnection(),
-  concurrency: 10,
-})
-
-scoreWorker.on('failed', (job, err) => {
-  if (!job) return
-  console.error(`[ScoreWorker] Job ${job.id} failed:`, err.message)
-})
-
-scoreWorker.on('completed', (job) => {
-  console.log(`[ScoreWorker] Job ${job.id} completed`)
-})
-
-console.log('[ScoreWorker] Started — concurrency 10')
-
-export default scoreWorker
