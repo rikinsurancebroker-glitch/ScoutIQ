@@ -1,5 +1,28 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--selection-bg, rgba(36,107,253,0.25));
+  color: inherit;
+}
+
+/* Cursor glow effect */
+@media (hover: hover) {
+  * { cursor: default; }
+  a, button { cursor: pointer; }
+}

@@ -49,21 +49,31 @@ export interface SiteContent {
 }
 
 export type HeroLayout = 'centered' | 'split' | 'fullscreen'
-export type CardStyle = 'rounded' | 'sharp' | 'pill'
+export type CardStyle = 'rounded' | 'sharp' | 'pill' | 'clay'
+
+export type ThemeVariant =
+  | 'aurora'
+  | 'emerald-minimal'
+  | 'golden-editorial'
+  | 'neo-dark'
+  | 'clay-ui'
+  | 'scandinavian'
+  | 'liquid-motion'
+  | 'swiss-grid'
+  | 'mono-brutalist'
+  | 'cinematic'
 
 export interface SiteTheme {
   id: string
   name: string
+  variant: ThemeVariant
   heroLayout: HeroLayout
   cardStyle: CardStyle
   dark: boolean
   fontHeading: string
   fontBody: string
-  /** CSS gradient for hero background when not using AI colors alone */
   heroGradient: string
-  /** Decorative pattern class suffix */
-  pattern: 'dots' | 'grid' | 'waves' | 'none'
-  /** Fallback palette if API colors are generic */
+  pattern: 'dots' | 'grid' | 'waves' | 'aurora' | 'none'
   palette: {
     primary: string
     secondary: string
@@ -72,5 +82,6 @@ export interface SiteTheme {
     surface: string
     text: string
     textMuted: string
+    border: string
   }
 }

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'ScoutIQ Preview — cafe-01',
+  title: 'ScoutIQ Preview',
   description: 'Business website preview',
 }
 
@@ -12,7 +12,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;700&family=Karla:wght@400;500;600&display=swap" rel="stylesheet" />
+        {/* Clay UI Modern — Fraunces + DM Sans */}
+        <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
       </head>
       <body>{children}</body>
     </html>

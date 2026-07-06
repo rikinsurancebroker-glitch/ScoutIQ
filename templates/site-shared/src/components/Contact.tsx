@@ -1,113 +1,236 @@
+'use client'
+
 import type { SiteContent, SiteTheme } from '../types'
 import { resolveColors, cardRadius } from '../utils'
+import { AnimateIn } from './AnimateIn'
 
 export function Contact({ content, theme }: { content: SiteContent; theme: SiteTheme }) {
   const colors = resolveColors(content, theme)
   const radius = cardRadius(theme.cardStyle)
   const { contact, hours, social } = content
 
+  const isBrutalist = theme.variant === 'mono-brutalist'
+  const isGolden = theme.variant === 'golden-editorial'
+  const isDark = theme.dark
+  const isNeo = theme.variant === 'neo-dark'
+  const isClay = theme.variant === 'clay-ui'
+
   const socialLinks = [
-    { label: 'Instagram', url: social.instagram },
-    { label: 'Facebook', url: social.facebook },
-    { label: 'YouTube', url: social.youtube },
-    { label: 'Twitter', url: social.twitter },
-    { label: 'Yelp', url: social.yelp },
+    { label: 'Instagram', url: social.instagram, emoji: '📸' },
+    { label: 'Facebook', url: social.facebook, emoji: '👍' },
+    { label: 'YouTube', url: social.youtube, emoji: '▶️' },
+    { label: 'Twitter', url: social.twitter, emoji: '𝕏' },
+    { label: 'Yelp', url: social.yelp, emoji: '⭐' },
   ].filter((s) => s.url)
 
+  const sectionBg = isDark
+    ? colors.surface
+    : isGolden
+    ? '#111'
+    : `${colors.primary}05`
+
+  const cardBg = isDark ? colors.background : isGolden ? '#1a1a1a' : '#fff'
+  const textColor = isDark || isGolden ? '#fff' : colors.text
+  const mutedColor = isDark || isGolden ? '#888' : colors.textMuted
+  const borderColor = isDark || isGolden ? '#333' : colors.border
+
   return (
-    <section id="contact" className="py-20 px-6" style={{ background: colors.background }}>
+    <section id="contact" className="py-24 px-6" style={{ background: sectionBg }}>
       <div className="max-w-6xl mx-auto">
-        <h2
-          className="text-3xl md:text-4xl font-bold text-center mb-12"
-          style={{ fontFamily: theme.fontHeading, color: colors.text }}
-        >
-          Get In Touch
-        </h2>
-        <div className="grid md:grid-cols-2 gap-8">
-          <div
-            className="p-8 space-y-6"
-            style={{ background: colors.surface, borderRadius: radius, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}
-          >
-            {contact.phone && (
-              <div>
-                <p className="text-xs uppercase tracking-widest mb-1" style={{ color: colors.textMuted }}>Phone</p>
-                <a href={`tel:${contact.phone}`} className="text-lg font-medium" style={{ color: colors.primary }}>
-                  {contact.phone}
-                </a>
-              </div>
-            )}
-            {contact.email && (
-              <div>
-                <p className="text-xs uppercase tracking-widest mb-1" style={{ color: colors.textMuted }}>Email</p>
-                <a href={`mailto:${contact.email}`} className="text-lg font-medium" style={{ color: colors.primary }}>
-                  {contact.email}
-                </a>
-              </div>
-            )}
-            {contact.address && (
-              <div>
-                <p className="text-xs uppercase tracking-widest mb-1" style={{ color: colors.textMuted }}>Address</p>
-                <p style={{ color: colors.text }}>{contact.address}</p>
-              </div>
-            )}
-            {contact.whatsapp && (
-              <a
-                href={contact.whatsapp}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block px-6 py-3 font-semibold text-white text-sm"
-                style={{ background: '#25D366', borderRadius: radius }}
-              >
-                Chat on WhatsApp
-              </a>
-            )}
-            {socialLinks.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-2">
-                {socialLinks.map((s) => (
-                  <a
-                    key={s.label}
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 text-sm font-medium border"
-                    style={{ borderColor: colors.primary, color: colors.primary, borderRadius: radius }}
-                  >
-                    {s.label}
-                  </a>
-                ))}
-              </div>
-            )}
-          </div>
-          <div className="space-y-6">
-            {hours.length > 0 && (
+        <AnimateIn delay={0}>
+          <div className={`mb-14 ${isBrutalist ? '' : 'text-center'}`}>
+            {isBrutalist ? (
               <div
-                className="p-8"
-                style={{ background: colors.surface, borderRadius: radius, boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}
+                className="inline-block px-3 py-1 text-xs font-mono uppercase tracking-[0.4em] mb-4"
+                style={{ background: colors.primary, color: '#000' }}
               >
-                <h3 className="font-bold mb-4" style={{ color: colors.text }}>Opening Hours</h3>
-                <dl className="space-y-2">
-                  {hours.map((h) => (
-                    <div key={h.day} className="flex justify-between text-sm">
-                      <dt style={{ color: colors.textMuted }}>{h.day}</dt>
-                      <dd className="font-medium" style={{ color: colors.text }}>{h.hours}</dd>
-                    </div>
-                  ))}
-                </dl>
+                Contact
               </div>
-            )}
-            {contact.mapEmbed && (
-              <div className="overflow-hidden" style={{ borderRadius: radius }}>
-                <iframe
-                  src={contact.mapEmbed}
-                  width="100%"
-                  height="220"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  title="Map"
-                />
-              </div>
-            )}
+            ) : null}
+            <h2
+              className={`font-bold ${isBrutalist ? 'text-5xl uppercase' : 'text-3xl md:text-4xl'}`}
+              style={{
+                fontFamily: theme.fontHeading,
+                color: isDark || isGolden ? '#fff' : colors.text,
+                fontWeight: isGolden ? 400 : undefined,
+              }}
+            >
+              {isGolden ? 'Reach Us' : isBrutalist ? 'Get In Touch' : 'Contact Us'}
+            </h2>
+            <p
+              className={`mt-3 ${isBrutalist ? '' : 'text-center'} max-w-lg ${isBrutalist ? '' : 'mx-auto'}`}
+              style={{ color: mutedColor }}
+            >
+              We would love to hear from you.
+            </p>
           </div>
+        </AnimateIn>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          {/* Contact details */}
+          <AnimateIn delay={100} direction="left">
+            <div
+              className="p-8 space-y-6 h-full"
+              style={{
+                background: cardBg,
+                borderRadius: isBrutalist ? '0' : radius,
+                border: isNeo
+                  ? `1px solid ${colors.primary}20`
+                  : `1px solid ${borderColor}`,
+                boxShadow: isClay
+                  ? `0 8px 32px ${colors.primary}15`
+                  : '0 2px 16px rgba(0,0,0,0.04)',
+              }}
+            >
+              {contact.phone && (
+                <div>
+                  <p
+                    className="text-xs font-semibold uppercase tracking-[0.2em] mb-1.5"
+                    style={{ color: mutedColor }}
+                  >
+                    Phone
+                  </p>
+                  <a
+                    href={`tel:${contact.phone}`}
+                    className="text-lg font-semibold transition-opacity hover:opacity-80"
+                    style={{ color: colors.primary }}
+                  >
+                    {contact.phone}
+                  </a>
+                </div>
+              )}
+
+              {contact.email && (
+                <div>
+                  <p
+                    className="text-xs font-semibold uppercase tracking-[0.2em] mb-1.5"
+                    style={{ color: mutedColor }}
+                  >
+                    Email
+                  </p>
+                  <a
+                    href={`mailto:${contact.email}`}
+                    className="text-base font-medium transition-opacity hover:opacity-80"
+                    style={{ color: colors.primary }}
+                  >
+                    {contact.email}
+                  </a>
+                </div>
+              )}
+
+              {contact.address && (
+                <div>
+                  <p
+                    className="text-xs font-semibold uppercase tracking-[0.2em] mb-1.5"
+                    style={{ color: mutedColor }}
+                  >
+                    Address
+                  </p>
+                  <p className="text-sm leading-relaxed" style={{ color: textColor }}>
+                    {contact.address}
+                  </p>
+                </div>
+              )}
+
+              {/* WhatsApp CTA */}
+              {contact.whatsapp && (
+                <a
+                  href={contact.whatsapp}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-6 py-3 font-semibold text-sm text-white transition-all hover:scale-105"
+                  style={{
+                    background: '#25D366',
+                    borderRadius: isClay ? '999px' : isBrutalist ? '0' : '10px',
+                    boxShadow: '0 4px 16px rgba(37,211,102,0.4)',
+                  }}
+                >
+                  <span className="text-xl">💬</span>
+                  Chat on WhatsApp
+                </a>
+              )}
+
+              {/* Social links */}
+              {socialLinks.length > 0 && (
+                <div>
+                  <p
+                    className="text-xs font-semibold uppercase tracking-[0.2em] mb-3"
+                    style={{ color: mutedColor }}
+                  >
+                    Follow Us
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {socialLinks.map((s) => (
+                      <a
+                        key={s.label}
+                        href={s.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-2 text-sm font-medium border transition-all hover:scale-105"
+                        style={{
+                          borderColor: `${colors.primary}40`,
+                          color: textColor,
+                          borderRadius: isBrutalist ? '0' : '8px',
+                        }}
+                      >
+                        {s.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </AnimateIn>
+
+          {/* Hours + Map */}
+          <AnimateIn delay={200} direction="right">
+            <div className="space-y-6 h-full">
+              {hours.length > 0 && (
+                <div
+                  className="p-8"
+                  style={{
+                    background: cardBg,
+                    borderRadius: isBrutalist ? '0' : radius,
+                    border: isNeo ? `1px solid ${colors.primary}20` : `1px solid ${borderColor}`,
+                    boxShadow: '0 2px 16px rgba(0,0,0,0.04)',
+                  }}
+                >
+                  <h3
+                    className="font-semibold mb-5 text-sm uppercase tracking-widest"
+                    style={{ color: colors.primary }}
+                  >
+                    Opening Hours
+                  </h3>
+                  <dl className="space-y-3">
+                    {hours.map((h) => (
+                      <div key={h.day} className="flex justify-between text-sm">
+                        <dt style={{ color: mutedColor }}>{h.day}</dt>
+                        <dd className="font-semibold" style={{ color: textColor }}>
+                          {h.hours}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </div>
+              )}
+
+              {contact.mapEmbed && (
+                <div
+                  className="overflow-hidden"
+                  style={{ borderRadius: isBrutalist ? '0' : radius }}
+                >
+                  <iframe
+                    src={contact.mapEmbed}
+                    width="100%"
+                    height="220"
+                    style={{ border: 0, display: 'block' }}
+                    loading="lazy"
+                    title="Map"
+                  />
+                </div>
+              )}
+            </div>
+          </AnimateIn>
         </div>
       </div>
     </section>
