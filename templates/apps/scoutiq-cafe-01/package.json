@@ -1,10 +1,10 @@
-{
+﻿{
   "name": "scoutiq-cafe-01",
   "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev -p 3018",
-    "build": "next build",
+    "build": "npm install --prefix ../../site-shared && next build",
     "start": "next start -p 3018"
   },
   "dependencies": {
