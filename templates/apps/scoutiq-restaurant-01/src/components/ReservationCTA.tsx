@@ -11,9 +11,7 @@ const CTA_IMG =
   'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=2000&q=80'
 
 export function ReservationCTA({ content, colors }: ReservationProps) {
-  const ctaHref =
-    content.contact.whatsapp ??
-    (content.contact.phone ? `tel:${content.contact.phone}` : '#contact')
+  const ctaHref = content.contact.phone ? `tel:${content.contact.phone}` : '#contact'
 
   return (
     <section id="reserve" className="relative py-28 md:py-36 px-6 overflow-hidden">

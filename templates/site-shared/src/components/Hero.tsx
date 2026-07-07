@@ -41,7 +41,7 @@ function StatBadge({ label, value, color }: { label: string; value: string; colo
 
 function AuroraHero({ content, theme }: HeroProps) {
   const colors = resolveColors(content, theme)
-  const ctaHref = content.contact.whatsapp ?? (content.contact.phone ? `tel:${content.contact.phone}` : '#contact')
+  const ctaHref = content.contact.phone ? `tel:${content.contact.phone}` : '#contact'
   const radius = cardRadius(theme.cardStyle)
 
   return (
@@ -167,7 +167,7 @@ function AuroraHero({ content, theme }: HeroProps) {
 
 function NeoHero({ content, theme }: HeroProps) {
   const colors = resolveColors(content, theme)
-  const ctaHref = content.contact.whatsapp ?? (content.contact.phone ? `tel:${content.contact.phone}` : '#contact')
+  const ctaHref = content.contact.phone ? `tel:${content.contact.phone}` : '#contact'
 
   return (
     <section
@@ -246,7 +246,7 @@ function NeoHero({ content, theme }: HeroProps) {
 
 function GoldenHero({ content, theme }: HeroProps) {
   const colors = resolveColors(content, theme)
-  const ctaHref = content.contact.whatsapp ?? (content.contact.phone ? `tel:${content.contact.phone}` : '#contact')
+  const ctaHref = content.contact.phone ? `tel:${content.contact.phone}` : '#contact'
 
   return (
     <section className="min-h-screen flex flex-col md:flex-row pt-16">
@@ -329,7 +329,7 @@ function GoldenHero({ content, theme }: HeroProps) {
 
 function EmeraldHero({ content, theme }: HeroProps) {
   const colors = resolveColors(content, theme)
-  const ctaHref = content.contact.whatsapp ?? (content.contact.phone ? `tel:${content.contact.phone}` : '#contact')
+  const ctaHref = content.contact.phone ? `tel:${content.contact.phone}` : '#contact'
   const radius = cardRadius(theme.cardStyle)
 
   return (
@@ -412,7 +412,7 @@ function EmeraldHero({ content, theme }: HeroProps) {
 
 function ClayHero({ content, theme }: HeroProps) {
   const colors = resolveColors(content, theme)
-  const ctaHref = content.contact.whatsapp ?? (content.contact.phone ? `tel:${content.contact.phone}` : '#contact')
+  const ctaHref = content.contact.phone ? `tel:${content.contact.phone}` : '#contact'
 
   return (
     <section
@@ -502,7 +502,7 @@ function ClayHero({ content, theme }: HeroProps) {
 
 function BrutalistHero({ content, theme }: HeroProps) {
   const colors = resolveColors(content, theme)
-  const ctaHref = content.contact.whatsapp ?? (content.contact.phone ? `tel:${content.contact.phone}` : '#contact')
+  const ctaHref = content.contact.phone ? `tel:${content.contact.phone}` : '#contact'
 
   return (
     <section
@@ -567,7 +567,7 @@ function BrutalistHero({ content, theme }: HeroProps) {
 
 function ScandinavianHero({ content, theme }: HeroProps) {
   const colors = resolveColors(content, theme)
-  const ctaHref = content.contact.whatsapp ?? (content.contact.phone ? `tel:${content.contact.phone}` : '#contact')
+  const ctaHref = content.contact.phone ? `tel:${content.contact.phone}` : '#contact'
 
   return (
     <section
@@ -639,7 +639,7 @@ function ScandinavianHero({ content, theme }: HeroProps) {
 
 function LiquidHero({ content, theme }: HeroProps) {
   const colors = resolveColors(content, theme)
-  const ctaHref = content.contact.whatsapp ?? (content.contact.phone ? `tel:${content.contact.phone}` : '#contact')
+  const ctaHref = content.contact.phone ? `tel:${content.contact.phone}` : '#contact'
 
   return (
     <section
@@ -743,7 +743,7 @@ function LiquidHero({ content, theme }: HeroProps) {
 
 function CinematicHero({ content, theme }: HeroProps) {
   const colors = resolveColors(content, theme)
-  const ctaHref = content.contact.whatsapp ?? (content.contact.phone ? `tel:${content.contact.phone}` : '#contact')
+  const ctaHref = content.contact.phone ? `tel:${content.contact.phone}` : '#contact'
 
   return (
     <section

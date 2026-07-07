@@ -50,7 +50,6 @@ const MOCK: SiteContent = {
     phone: '+1 (415) 555-0123',
     email: 'reservations@osterialumiere.com',
     address: '742 Vineyard Lane, San Francisco, CA 94110',
-    whatsapp: 'https://wa.me/14155550123',
     mapEmbed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3153.0',
   },
   hours: [

@@ -5,24 +5,32 @@
 html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-*, *::before, *::after {
-  box-sizing: border-box;
 }
 
 body {
+  background: #0A0A0A;
   overflow-x: hidden;
 }
 
-::selection {
-  background: var(--selection-bg, rgba(36,107,253,0.25));
-  color: inherit;
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
 }
 
-/* Cursor glow effect */
-@media (hover: hover) {
-  * { cursor: default; }
-  a, button { cursor: pointer; }
+/* Image duotone treatment — dark + slight desaturation for the reference look */
+.img-duo {
+  filter: saturate(0.85) contrast(1.05) brightness(0.9);
+}
+
+/* Subtle orange glow line */
+.blaze-rule {
+  width: 64px;
+  height: 3px;
+  background: #FF6B1A;
+}
+
+::selection {
+  background: rgba(255, 107, 26, 0.35);
+  color: #fff;
 }

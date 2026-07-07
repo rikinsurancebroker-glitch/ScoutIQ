@@ -1,10 +1,9 @@
-import { SitePage } from '@scoutiq/site-shared'
-import { gym01 } from '@scoutiq/site-shared/themes'
+import { GymSitePage } from '@/components/GymSitePage'
 
 interface Props {
   params: { businessId: string }
 }
 
 export default function Page({ params }: Props) {
-  return <SitePage businessId={params.businessId} theme={gym01} />
+  return <GymSitePage businessId={params.businessId} />
 }

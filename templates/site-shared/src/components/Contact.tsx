@@ -132,24 +132,6 @@ export function Contact({ content, theme }: { content: SiteContent; theme: SiteT
                 </div>
               )}
 
-              {/* WhatsApp CTA */}
-              {contact.whatsapp && (
-                <a
-                  href={contact.whatsapp}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 px-6 py-3 font-semibold text-sm text-white transition-all hover:scale-105"
-                  style={{
-                    background: '#25D366',
-                    borderRadius: isClay ? '999px' : isBrutalist ? '0' : '10px',
-                    boxShadow: '0 4px 16px rgba(37,211,102,0.4)',
-                  }}
-                >
-                  <span className="text-xl">💬</span>
-                  Chat on WhatsApp
-                </a>
-              )}
-
               {/* Social links */}
               {socialLinks.length > 0 && (
                 <div>

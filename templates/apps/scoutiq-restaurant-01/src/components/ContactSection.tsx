@@ -90,21 +90,10 @@ export function ContactSection({ content, colors }: ContactProps) {
           )}
         </div>
 
-        {/* Socials + WhatsApp */}
-        {(socialLinks.length > 0 || contact.whatsapp) && (
+        {/* Socials */}
+        {socialLinks.length > 0 && (
           <AnimateIn>
             <div className="flex flex-wrap justify-center gap-3 mb-14">
-              {contact.whatsapp && (
-                <a
-                  href={contact.whatsapp}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-6 py-2.5 text-[12px] font-semibold uppercase tracking-[0.18em] text-white transition-all hover:-translate-y-0.5"
-                  style={{ background: '#25D366' }}
-                >
-                  WhatsApp
-                </a>
-              )}
               {socialLinks.map((s) => (
                 <a
                   key={s.label}

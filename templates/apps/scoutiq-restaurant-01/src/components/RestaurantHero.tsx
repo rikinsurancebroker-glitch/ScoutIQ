@@ -10,9 +10,7 @@ const HERO_IMG =
   'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=2000&q=80'
 
 export function RestaurantHero({ content, colors }: HeroProps) {
-  const ctaHref =
-    content.contact.whatsapp ??
-    (content.contact.phone ? `tel:${content.contact.phone}` : '#reserve')
+  const ctaHref = content.contact.phone ? `tel:${content.contact.phone}` : '#reserve'
 
   return (
     <section className="relative h-[92vh] min-h-[560px] flex items-center justify-center overflow-hidden">

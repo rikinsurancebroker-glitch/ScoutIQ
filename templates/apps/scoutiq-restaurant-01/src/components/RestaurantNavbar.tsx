@@ -28,9 +28,7 @@ export function RestaurantNavbar({ content, colors }: NavbarProps) {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const ctaHref =
-    content.contact.whatsapp ??
-    (content.contact.phone ? `tel:${content.contact.phone}` : '#reserve')
+  const ctaHref = content.contact.phone ? `tel:${content.contact.phone}` : '#reserve'
 
   return (
     <header
