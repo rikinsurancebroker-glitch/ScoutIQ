@@ -18,7 +18,8 @@
     "db:studio": "prisma studio",
     "fix:local-urls": "node scripts/fix-local-template-urls.js",
     "fix:production-urls": "node scripts/fix-production-template-urls.js",
-    "check:pipeline": "node scripts/check-pipeline.js"
+    "check:pipeline": "node scripts/check-pipeline.js",
+    "test:email": "node scripts/test-email.js"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
