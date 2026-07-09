@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express'
+import { randomUUID } from 'crypto'
 import { z } from 'zod'
 import { prisma } from '../lib/prisma'
 import { supabase } from '../lib/supabase'
@@ -24,11 +25,13 @@ router.post('/', async (req: Request, res: Response) => {
   const { fileName } = parsed.data
   const userId = req.user!.userId
 
+  // A random UUID segment guarantees the path is unique even when several
+  // uploads with the same filename are created within the same millisecond.
   const upload = await prisma.upload.create({
     data: {
       userId,
       fileName,
-      storagePath: `${userId}/${Date.now()}-${fileName}`,
+      storagePath: `${userId}/${Date.now()}-${randomUUID()}-${fileName}`,
     },
   })
 
@@ -108,7 +111,7 @@ router.get('/:id/status', async (req: Request, res: Response) => {
 
   const scoreThreshold = parseInt(process.env.SCORE_THRESHOLD ?? '50')
 
-  const [businessCount, scored, opportunities] = await Promise.all([
+  const [businessCount, scored, opportunities, generated] = await Promise.all([
     prisma.business.count({ where: { uploadId: id } }),
     prisma.presenceScore.count({
       where: { business: { uploadId: id } },
@@ -119,6 +122,9 @@ router.get('/:id/status', async (req: Request, res: Response) => {
         total: { lt: scoreThreshold },
       },
     }),
+    prisma.generatedWebsite.count({
+      where: { business: { uploadId: id } },
+    }),
   ])
 
   res.json({
@@ -128,6 +134,9 @@ router.get('/:id/status', async (req: Request, res: Response) => {
     totalBusinesses: businessCount,
     scored,
     opportunities,
+    // Websites are generated only for businesses below the score threshold
+    // ("opportunities"), and that happens *after* the upload flips to DONE.
+    generated,
   })
 })
 

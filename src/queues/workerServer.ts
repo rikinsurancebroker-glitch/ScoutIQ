@@ -5,8 +5,10 @@ import { registerWorkers } from './registerWorkers'
 import { stopBoss } from '../lib/jobQueue'
 
 // Render Web Service requires an open port — this satisfies that check
-// while the actual worker logic runs via registerWorkers()
-const PORT = parseInt(process.env.PORT ?? '4001')
+// while the actual worker logic runs via registerWorkers().
+// Use a dedicated WORKER_PORT so it never collides with the API's PORT
+// when both run together (e.g. `npm run dev:full`).
+const PORT = parseInt(process.env.WORKER_PORT ?? '4001')
 const server = http.createServer((_req, res) => {
   res.writeHead(200)
   res.end('workers ok')

@@ -61,7 +61,7 @@ app.use(errorHandler)
 const PORT = parseInt(process.env.PORT ?? '4000')
 
 app.listen(PORT, () => {
-  console.log(`ScoutIQ API running on port ${PORT}`)
+  console.log(`The Human Collective API running on port ${PORT}`)
   startExpiryCleanup()
   startReminderJob()
 })

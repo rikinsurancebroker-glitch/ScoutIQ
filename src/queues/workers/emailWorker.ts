@@ -93,7 +93,7 @@ export async function processEmailJob(data: EmailJobData): Promise<void> {
   if (!business.websiteGen) throw new Error(`No generated website for business ${businessId}`)
 
   const transporter = createTransporter()
-  const fromAddress = process.env.SMTP_FROM ?? 'ScoutIQ <contact@theheracubragroup.ca>'
+  const fromAddress = process.env.SMTP_FROM ?? 'The Human Collective <contact@thehumancollective.ca>'
   const qrBuffer = await fetchQrBuffer(businessId)
   const attachments = qrBuffer
     ? [{ filename: 'preview-qr.png', content: qrBuffer, cid: 'qr-code', contentType: 'image/png' }]

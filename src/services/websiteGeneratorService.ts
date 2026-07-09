@@ -36,12 +36,25 @@ const TEMPLATES: Record<string, TemplateDefinition> = {
   'restaurant-01': {
     url: 'https://scoutiq-restaurant-01.vercel.app',
     description: 'Warm food-focused, large hero, menu highlights',
-    categories: ['restaurant', 'food', 'takeaway', 'biryani', 'pizza', 'dhaba'],
+    categories: [
+      'restaurant',
+      'food',
+      'takeaway',
+      'biryani',
+      'pizza',
+      'dhaba',
+      'fine dining',
+      'steakhouse',
+      'sushi',
+      'bar',
+      'grill',
+    ],
   },
   'restaurant-02': {
     url: 'https://scoutiq-restaurant-02.vercel.app',
     description: 'Dark moody, fine dining, premium feel',
-    categories: ['fine dining', 'steakhouse', 'sushi', 'bar', 'grill'],
+    // Not auto-selected — all restaurant/dining businesses use restaurant-01.
+    categories: [],
   },
   'clinic-01': {
     url: 'https://scoutiq-clinic-01.vercel.app',

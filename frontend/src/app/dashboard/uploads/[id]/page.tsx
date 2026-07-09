@@ -30,12 +30,19 @@ export default function UploadDetailPage() {
   const isProcessing =
     statusData?.status === 'PROCESSING' || statusData?.status === 'SCORING'
 
+  // After scoring (DONE), websites are still being generated for opportunities.
+  const isGeneratingSites =
+    statusData?.status === 'DONE' &&
+    (statusData?.generated ?? 0) < (statusData?.opportunities ?? 0)
+
+  const isActive = isProcessing || isGeneratingSites
+
   const qKey = ['businesses', params]
 
   const { data, isLoading } = useQuery({
     queryKey: qKey,
     queryFn: () => businessesApi.list(params),
-    refetchInterval: isProcessing ? 5000 : false,
+    refetchInterval: isActive ? 5000 : false,
   })
 
   function updateParams(updates: Partial<BusinessListParams>) {
@@ -67,6 +74,8 @@ export default function UploadDetailPage() {
             ? 'Loading...'
             : isProcessing
             ? `Processing… ${statusData?.scored ?? 0} scored so far`
+            : isGeneratingSites
+            ? `Building websites… ${statusData?.generated ?? 0} / ${statusData?.opportunities ?? 0} ready`
             : `${total.toLocaleString()} businesses · ${statusData?.opportunities ?? 0} opportunities`
         }
       />
@@ -78,6 +87,17 @@ export default function UploadDetailPage() {
           <span>
             Scoring in progress — {statusData?.processedRows ?? 0} / {statusData?.totalRows ?? '?'} rows processed.
             Page auto-refreshes every 5 seconds.
+          </span>
+        </div>
+      )}
+
+      {/* Website generation banner */}
+      {isGeneratingSites && (
+        <div className="flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 mb-4 text-sm text-indigo-700">
+          <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
+          <span>
+            Scoring complete — generating websites for opportunities ({statusData?.generated ?? 0} /{' '}
+            {statusData?.opportunities ?? 0} ready). Page auto-refreshes every 5 seconds.
           </span>
         </div>
       )}

@@ -310,7 +310,7 @@ router.post('/send-test-email/:businessId', async (req: Request, res: Response) 
 
   try {
     const transporter = createTransporter()
-    const fromAddress = process.env['SMTP_FROM'] ?? 'ScoutIQ <contact@theheracubragroup.ca>'
+    const fromAddress = process.env['SMTP_FROM'] ?? 'The Human Collective <contact@thehumancollective.ca>'
     const info = await transporter.sendMail({ from: fromAddress, to: recipient, subject: subject.trim(), html })
     res.json({ sent: true, to: recipient, messageId: info.messageId })
   } catch (err) {

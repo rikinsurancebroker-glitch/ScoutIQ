@@ -1,7 +1,7 @@
 {
-  "name": "scoutiq-backend",
+  "name": "thehumancollective-backend",
   "version": "1.0.0",
-  "description": "ScoutIQ AI-powered B2B SaaS backend",
+  "description": "The Human Collective AI-powered B2B SaaS backend",
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon --exec ts-node src/index.ts",

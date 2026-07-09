@@ -217,7 +217,7 @@ export function buildEmailHtml(
           <tr>
             <td style="background:#f8fafc;padding:20px 40px;border-top:1px solid #e2e8f0;">
               <p style="margin:0;color:#94a3b8;font-size:11px;text-align:center;">
-                Sent by <strong style="color:#64748b;">ScoutIQ</strong> · contact@theheracubragroup.ca
+                Sent by <strong style="color:#64748b;">The Human Collective</strong> · contact@thehumancollective.ca
               </p>
             </td>
           </tr>

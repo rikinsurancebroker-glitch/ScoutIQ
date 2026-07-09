@@ -9,9 +9,16 @@ export function useUploadStatus(uploadId: string | null, enabled = true) {
     queryFn: () => uploadsApi.status(uploadId!),
     enabled: !!uploadId && enabled,
     refetchInterval: (query) => {
-      const status = query.state.data?.status
+      const data = query.state.data
+      const status = data?.status
       if (!status) return 3000
-      if (status === 'DONE' || status === 'FAILED') return false
+      if (status === 'FAILED') return false
+      // Website generation runs after scoring finishes (status DONE), so keep
+      // polling until every opportunity has a generated website.
+      if (status === 'DONE') {
+        const stillGenerating = (data?.generated ?? 0) < (data?.opportunities ?? 0)
+        return stillGenerating ? 3000 : false
+      }
       return 2000
     },
     staleTime: 0,

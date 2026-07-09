@@ -39,7 +39,7 @@ export function Sidebar() {
             <Search className="w-4 h-4 text-white" />
           </div>
           <div>
-            <span className="text-white font-bold text-lg tracking-tight">ScoutIQ</span>
+            <span className="text-white font-bold text-lg tracking-tight">The Human Collective</span>
             <div className="text-slate-400 text-[10px] font-medium uppercase tracking-wider leading-none">
               B2B Outreach
             </div>

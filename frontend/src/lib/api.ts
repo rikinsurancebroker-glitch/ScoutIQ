@@ -37,6 +37,7 @@ export interface UploadStatusDetail {
   totalBusinesses: number
   scored: number
   opportunities: number
+  generated: number
 }
 
 export type CrmStatus =
