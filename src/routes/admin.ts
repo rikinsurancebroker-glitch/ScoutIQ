@@ -79,6 +79,40 @@ router.get('/outreach-ready', async (req: Request, res: Response) => {
 })
 
 /**
+ * GET /api/admin/websites
+ * Returns every generated website for the current user, with template info,
+ * so they can be previewed and reviewed in a gallery.
+ */
+router.get('/websites', async (req: Request, res: Response) => {
+  const userId = req.user!.userId
+
+  const sites = await prisma.generatedWebsite.findMany({
+    where: { business: { upload: { userId } } },
+    orderBy: { generatedAt: 'desc' },
+    select: {
+      siteUrl: true,
+      qrUrl: true,
+      status: true,
+      templateId: true,
+      templateUrl: true,
+      expiresAt: true,
+      viewCount: true,
+      generatedAt: true,
+      business: {
+        select: {
+          id: true,
+          name: true,
+          category: true,
+          presenceScore: { select: { total: true } },
+        },
+      },
+    },
+  })
+
+  res.json(sites)
+})
+
+/**
  * POST /api/admin/schedule-emails
  * Body: { businessIds: string[], scheduledFor?: string (ISO date) }
  * Schedules outreach emails for given businesses. If scheduledFor is omitted, sends immediately.

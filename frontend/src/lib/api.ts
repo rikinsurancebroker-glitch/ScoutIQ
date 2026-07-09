@@ -264,6 +264,26 @@ export const adminApi = {
         payload
       )
       .then((r) => r.data),
+
+  websites: () =>
+    api.get<GeneratedSite[]>('/api/admin/websites').then((r) => r.data),
+}
+
+export interface GeneratedSite {
+  siteUrl: string
+  qrUrl: string
+  status: SiteStatus
+  templateId: string
+  templateUrl: string
+  expiresAt: string
+  viewCount: number
+  generatedAt: string
+  business: {
+    id: string
+    name: string
+    category: string | null
+    presenceScore: { total: number } | null
+  }
 }
 
 export interface EmailPreview {

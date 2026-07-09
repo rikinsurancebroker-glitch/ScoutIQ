@@ -11,6 +11,7 @@ import {
   Search,
   ChevronRight,
   Mail,
+  Globe,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import Image from 'next/image'
@@ -18,6 +19,7 @@ import Image from 'next/image'
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exact: true },
   { href: '/dashboard/uploads', label: 'Uploads', icon: Upload, exact: false },
+  { href: '/dashboard/websites', label: 'Websites', icon: Globe, exact: false },
   { href: '/dashboard/outreach', label: 'Email Outreach', icon: Mail, exact: false },
 ]
 
