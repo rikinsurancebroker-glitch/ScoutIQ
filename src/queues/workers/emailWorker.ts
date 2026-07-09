@@ -73,7 +73,7 @@ export async function processEmailJob(data: EmailJobData): Promise<void> {
     return
   }
 
-  const { businessId, type } = data
+  const { businessId, type, testEmailOverride } = data
 
   const business = await prisma.business.findUnique({
     where: { id: businessId },
@@ -81,9 +81,14 @@ export async function processEmailJob(data: EmailJobData): Promise<void> {
   })
 
   if (!business) throw new Error(`Business ${businessId} not found`)
-  if (!business.email) {
+  // In test mode we deliver to the override address regardless of the business's own email.
+  const recipient = testEmailOverride ?? business.email
+  if (!recipient) {
     console.log(`[EmailWorker] Business ${businessId} has no email, skipping`)
     return
+  }
+  if (testEmailOverride) {
+    console.log(`[EmailWorker] TEST MODE — routing ${businessId} email to ${testEmailOverride}`)
   }
   if (!business.websiteGen) throw new Error(`No generated website for business ${businessId}`)
 
@@ -111,13 +116,16 @@ export async function processEmailJob(data: EmailJobData): Promise<void> {
       qrEmbedded: !!qrBuffer,
     })
 
-    await transporter.sendMail({ from: fromAddress, to: business.email, subject, html, attachments })
+    await transporter.sendMail({ from: fromAddress, to: recipient, subject, html, attachments })
 
-    await prisma.emailLog.upsert({
-      where: { businessId },
-      create: { businessId, toEmail: business.email, subject, bodyHtml: html, status: 'SENT', sentAt: new Date() },
-      update: { status: 'SENT', sentAt: new Date() },
-    })
+    // Skip DB writes in test mode so we don't mark real businesses as emailed.
+    if (!testEmailOverride) {
+      await prisma.emailLog.upsert({
+        where: { businessId },
+        create: { businessId, toEmail: recipient, subject, bodyHtml: html, status: 'SENT', sentAt: new Date() },
+        update: { status: 'SENT', sentAt: new Date() },
+      })
+    }
     return
   }
 
@@ -140,15 +148,18 @@ export async function processEmailJob(data: EmailJobData): Promise<void> {
 
   await transporter.sendMail({
     from: fromAddress,
-    to: business.email,
+    to: recipient,
     subject: content.subject,
     html,
     attachments,
   })
 
+  // Skip DB writes in test mode so we don't mark real businesses as emailed.
+  if (testEmailOverride) return
+
   await prisma.emailLog.upsert({
     where: { businessId },
-    create: { businessId, toEmail: business.email, subject: content.subject, bodyHtml: html, status: 'SENT', sentAt: new Date() },
+    create: { businessId, toEmail: recipient, subject: content.subject, bodyHtml: html, status: 'SENT', sentAt: new Date() },
     update: { subject: content.subject, bodyHtml: html, status: 'SENT', sentAt: new Date() },
   })
 

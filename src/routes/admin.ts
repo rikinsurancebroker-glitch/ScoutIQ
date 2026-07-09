@@ -6,6 +6,7 @@ import type { EmailJobData } from '../queues/queues'
 import { openai } from '../lib/openai'
 import { buildEmailHtml } from '../lib/emailTemplates'
 import type { EmailContent } from '../lib/emailTemplates'
+import { createTransporter, isEmailEnabled } from '../lib/email'
 
 const router = Router()
 
@@ -83,9 +84,10 @@ router.get('/outreach-ready', async (req: Request, res: Response) => {
  * Schedules outreach emails for given businesses. If scheduledFor is omitted, sends immediately.
  */
 router.post('/schedule-emails', async (req: Request, res: Response) => {
-  const { businessIds, scheduledFor } = req.body as {
+  const { businessIds, scheduledFor, testEmail } = req.body as {
     businessIds: string[]
     scheduledFor?: string
+    testEmail?: string
   }
 
   if (!Array.isArray(businessIds) || businessIds.length === 0) {
@@ -93,20 +95,28 @@ router.post('/schedule-emails', async (req: Request, res: Response) => {
     return
   }
 
+  const trimmedTestEmail = testEmail?.trim()
+  if (trimmedTestEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedTestEmail)) {
+    res.status(400).json({ error: 'testEmail is not a valid email address' })
+    return
+  }
+
   const jobs: EmailJobData[] = businessIds.map((id) => ({
     businessId: id,
     type: 'EMAIL',
     ...(scheduledFor ? { scheduledFor } : {}),
+    ...(trimmedTestEmail ? { testEmailOverride: trimmedTestEmail } : {}),
   }))
 
   await enqueueEmailBulk(jobs)
 
+  const testSuffix = trimmedTestEmail ? ` (TEST → all to ${trimmedTestEmail})` : ''
   res.json({
     scheduled: jobs.length,
     scheduledFor: scheduledFor ?? 'immediate',
     message: scheduledFor
-      ? `${jobs.length} email(s) scheduled for ${new Date(scheduledFor).toISOString()}`
-      : `${jobs.length} email(s) queued for immediate delivery`,
+      ? `${jobs.length} email(s) scheduled for ${new Date(scheduledFor).toISOString()}${testSuffix}`
+      : `${jobs.length} email(s) queued for immediate delivery${testSuffix}`,
   })
 })
 
@@ -133,9 +143,18 @@ router.get('/preview-email/:businessId', async (req: Request, res: Response) => 
     return
   }
 
-  // If email was already sent, return the cached HTML
+  // If email was already sent, return the cached HTML.
+  // bodyHtml/ctaText pieces aren't stored separately, so editing regenerates from scratch.
   if (business.emailLog?.bodyHtml) {
-    res.json({ subject: business.emailLog.subject, html: business.emailLog.bodyHtml })
+    res.json({
+      subject: business.emailLog.subject,
+      html: business.emailLog.bodyHtml,
+      bodyHtml: null,
+      ctaText: null,
+      defaultEmail: business.email,
+      businessName: business.name,
+      cached: true,
+    })
     return
   }
 
@@ -182,7 +201,121 @@ Return JSON: subject (string, <60 chars), bodyHtml (HTML <p> tags only, no CTA),
     qrUrl,
   })
 
-  res.json({ subject: content.subject, html })
+  res.json({
+    subject: content.subject,
+    html,
+    bodyHtml: content.bodyHtml,
+    ctaText: content.ctaText,
+    defaultEmail: business.email,
+    businessName: business.name,
+    cached: false,
+  })
+})
+
+/**
+ * POST /api/admin/preview-email/:businessId/render
+ * Body: { subject, bodyHtml, ctaText }
+ * Rebuilds the full email HTML from edited content so the modal can show a live preview.
+ */
+router.post('/preview-email/:businessId/render', async (req: Request, res: Response) => {
+  const businessId = req.params['businessId'] as string
+  const { subject, bodyHtml, ctaText } = req.body as {
+    subject?: string
+    bodyHtml?: string
+    ctaText?: string
+  }
+
+  const business = await prisma.business.findUnique({
+    where: { id: businessId },
+    include: { websiteGen: true },
+  })
+
+  if (!business) {
+    res.status(404).json({ error: 'Business not found' })
+    return
+  }
+  if (!business.websiteGen) {
+    res.status(400).json({ error: 'No generated website for this business' })
+    return
+  }
+
+  const html = buildEmailHtml(business.category, {
+    businessName: business.name,
+    siteUrl: business.websiteGen.siteUrl,
+    content: {
+      subject: subject ?? '',
+      bodyHtml: bodyHtml ?? '',
+      ctaText: ctaText ?? 'View Your Free Site Preview',
+    },
+    qrUrl: business.websiteGen.qrUrl,
+  })
+
+  res.json({ html })
+})
+
+/**
+ * POST /api/admin/send-test-email/:businessId
+ * Body: { to, subject, bodyHtml, ctaText }
+ * Sends the edited email immediately to a custom recipient. Test-only: no DB writes,
+ * the business is NOT marked as contacted.
+ */
+router.post('/send-test-email/:businessId', async (req: Request, res: Response) => {
+  const businessId = req.params['businessId'] as string
+  const { to, subject, bodyHtml, ctaText } = req.body as {
+    to?: string
+    subject?: string
+    bodyHtml?: string
+    ctaText?: string
+  }
+
+  if (!isEmailEnabled()) {
+    res.status(400).json({ error: 'Email is disabled — set EMAIL_ENABLED=true and configure SMTP_* to send.' })
+    return
+  }
+
+  const recipient = to?.trim()
+  if (!recipient || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+    res.status(400).json({ error: 'A valid recipient email is required' })
+    return
+  }
+  if (!subject?.trim()) {
+    res.status(400).json({ error: 'Subject is required' })
+    return
+  }
+
+  const business = await prisma.business.findUnique({
+    where: { id: businessId },
+    include: { websiteGen: true },
+  })
+
+  if (!business) {
+    res.status(404).json({ error: 'Business not found' })
+    return
+  }
+  if (!business.websiteGen) {
+    res.status(400).json({ error: 'No generated website for this business' })
+    return
+  }
+
+  const html = buildEmailHtml(business.category, {
+    businessName: business.name,
+    siteUrl: business.websiteGen.siteUrl,
+    content: {
+      subject: subject.trim(),
+      bodyHtml: bodyHtml ?? '',
+      ctaText: ctaText?.trim() || 'View Your Free Site Preview',
+    },
+    qrUrl: business.websiteGen.qrUrl,
+  })
+
+  try {
+    const transporter = createTransporter()
+    const fromAddress = process.env['SMTP_FROM'] ?? 'ScoutIQ <contact@theheracubragroup.ca>'
+    const info = await transporter.sendMail({ from: fromAddress, to: recipient, subject: subject.trim(), html })
+    res.json({ sent: true, to: recipient, messageId: info.messageId })
+  } catch (err) {
+    res.status(500).json({ error: `Failed to send: ${(err as Error).message}` })
+  }
 })
 
 export default router

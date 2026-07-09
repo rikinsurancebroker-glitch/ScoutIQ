@@ -26,6 +26,7 @@ export interface EmailJobData {
   businessId: string
   type: 'EMAIL' | 'REMINDER'
   scheduledFor?: string // ISO string — if set, pg-boss delays until this time
+  testEmailOverride?: string // testing only — if set, delivers to this address instead of business.email
 }
 
 const SEND_OPTS = {

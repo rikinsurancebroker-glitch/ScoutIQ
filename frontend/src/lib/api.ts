@@ -227,11 +227,11 @@ export const adminApi = {
   outreachReady: () =>
     api.get<OutreachBusiness[]>('/api/admin/outreach-ready').then((r) => r.data),
 
-  scheduleEmails: (businessIds: string[], scheduledFor?: string) =>
+  scheduleEmails: (businessIds: string[], scheduledFor?: string, testEmail?: string) =>
     api
       .post<{ scheduled: number; scheduledFor: string; message: string }>(
         '/api/admin/schedule-emails',
-        { businessIds, scheduledFor }
+        { businessIds, scheduledFor, testEmail }
       )
       .then((r) => r.data),
 
@@ -242,6 +242,35 @@ export const adminApi = {
 
   previewEmail: (businessId: string) =>
     api
-      .get<{ subject: string; html: string }>(`/api/admin/preview-email/${businessId}`)
+      .get<EmailPreview>(`/api/admin/preview-email/${businessId}`)
       .then((r) => r.data),
+
+  renderEmail: (
+    businessId: string,
+    content: { subject: string; bodyHtml: string; ctaText: string }
+  ) =>
+    api
+      .post<{ html: string }>(`/api/admin/preview-email/${businessId}/render`, content)
+      .then((r) => r.data),
+
+  sendTestEmail: (
+    businessId: string,
+    payload: { to: string; subject: string; bodyHtml: string; ctaText: string }
+  ) =>
+    api
+      .post<{ sent: boolean; to: string; messageId: string }>(
+        `/api/admin/send-test-email/${businessId}`,
+        payload
+      )
+      .then((r) => r.data),
+}
+
+export interface EmailPreview {
+  subject: string
+  html: string
+  bodyHtml: string | null
+  ctaText: string | null
+  defaultEmail: string | null
+  businessName: string
+  cached: boolean
 }
