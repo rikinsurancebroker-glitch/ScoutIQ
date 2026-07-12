@@ -22,7 +22,7 @@ Free site preview URL: ${siteUrl}
 
 Return JSON with exactly these fields:
 - subject: catchy, personalised email subject line (under 60 chars)
-- bodyHtml: the email body as HTML paragraphs with inline styles. Use <p> tags. Mention their specific weaknesses kindly, say we built them a free preview site, and make it feel personal. Do NOT include a CTA button — that is handled separately.
+- bodyHtml: the email body as HTML paragraphs with inline styles. Use <p> tags. Mention their specific weaknesses kindly, say we built them a free preview site, and make it feel personal. End with the final pitch paragraph. Do NOT include a CTA button — that is handled separately. Do NOT add any sign-off, closing, signature, sender name, or placeholder tokens like [Your Name] — the signature is appended automatically.
 - ctaText: short CTA button label (e.g. "View My Free Website", "See Your Preview", "Claim Your Site")`
 
   try {

@@ -140,6 +140,12 @@ export function buildEmailHtml(
   const cfg = CATEGORY_CONFIG[cat]
   const { businessName, siteUrl, content, qrEmbedded, qrUrl } = opts
 
+  // The AI body sometimes appends its own sign-off with unfilled placeholders
+  // (e.g. "Warm regards, [Your Name] [Your Digital Agency]"). Strip any
+  // bracket-placeholders so they never reach a recipient; the signature below
+  // is fixed and added deterministically.
+  const bodyHtml = (content.bodyHtml ?? '').replace(/\[[^\]]*\]/g, '').trim()
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -167,7 +173,14 @@ export function buildEmailHtml(
           <!-- Body -->
           <tr>
             <td style="background:#ffffff;padding:36px 40px;">
-              ${content.bodyHtml}
+              ${bodyHtml}
+
+              <!-- Signature -->
+              <p style="margin:20px 0 0;color:#374151;font-size:15px;line-height:1.7;">
+                Warm regards,<br/>
+                <strong>Rik Jackson</strong><br/>
+                The Human Collective
+              </p>
 
               <!-- CTA Button -->
               <table cellpadding="0" cellspacing="0" style="margin:28px 0;">

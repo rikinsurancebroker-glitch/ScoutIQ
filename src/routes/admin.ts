@@ -205,7 +205,7 @@ Category: ${business.category ?? 'Local Business'}
 Address: ${business.address ?? 'not provided'}
 Key weaknesses identified: ${opportunities.slice(0, 3).join('; ')}
 Free site preview URL: ${siteUrl}
-Return JSON: subject (string, <60 chars), bodyHtml (HTML <p> tags only, no CTA), ctaText (short string).`
+Return JSON: subject (string, <60 chars), bodyHtml (HTML <p> tags only, no CTA button, and no sign-off/closing/signature/placeholder tokens like [Your Name] — the signature is added automatically), ctaText (short string).`
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
