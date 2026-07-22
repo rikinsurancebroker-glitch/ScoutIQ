@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3012",
-    "build": "npm install --prefix ../../site-shared && next build",
-    "start": "next start -p 3012"
+    "predev": "node ../../scripts/ensure-deps.mjs",
+    "dev": "node ./node_modules/next/dist/bin/next dev -p 3012",
+    "build": "npm install --prefix ../../site-shared && node ./node_modules/next/dist/bin/next build",
+    "start": "node ./node_modules/next/dist/bin/next start -p 3012"
   },
   "dependencies": {
     "@scoutiq/site-shared": "file:../../site-shared",

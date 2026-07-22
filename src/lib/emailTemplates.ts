@@ -12,19 +12,21 @@ export interface EmailContent {
 
 interface TemplateOptions {
   businessName: string
+  /** Shown in the email copy (usually the public Vercel preview URL). */
   siteUrl: string
+  /** href for CTA + links — should be the API tracking URL (/s/:id). Defaults to siteUrl. */
+  clickUrl?: string
   content: EmailContent
   /** CID attachment mode — used in real emails */
   qrEmbedded?: boolean
   /** Public URL mode — used in preview (replaces cid:qr-code with actual img src) */
   qrUrl?: string
+  /** 1×1 open-tracking pixel (omit for UI previews only). */
+  openTrackingUrl?: string
 }
 
-// Booking link for outreach — recipients can schedule a call with us.
-const CALENDLY_URL = 'https://calendly.com/rik-insurance-broker/30min'
-
-// Fallback contact — also set as the email Reply-To so replies reach Rik directly.
-export const REPLY_TO_EMAIL = 'rik.insurance.broker@gmail.com'
+// Public contact mailbox — replies land here and it backs the List-Unsubscribe header.
+export const CONTACT_EMAIL = 'contact@thehumancollective.ca'
 
 type CategoryKey =
   | 'restaurant'
@@ -138,13 +140,49 @@ function resolveCategory(category: string | null | undefined): CategoryKey {
   return 'default'
 }
 
+// Gmail/Outlook penalise HTML-only mail. Shipping a plain-text alternative
+// (multipart/alternative) is one of the strongest deliverability signals, so we
+// derive a readable text version from the same content used in the HTML body.
+export function buildEmailText(opts: TemplateOptions): string {
+  const { businessName, siteUrl, content } = opts
+  const linkUrl = opts.clickUrl ?? siteUrl
+  const bodyText = (content.bodyHtml ?? '')
+    .replace(/\[[^\]]*\]/g, '')
+    .replace(/<\/(p|div|h[1-6]|li)>/gi, '\n\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+
+  return [
+    `Hi ${businessName} team,`,
+    '',
+    bodyText,
+    '',
+    `${content.ctaText}: ${linkUrl}`,
+    '',
+    `Having trouble with the link? Just reply to this email.`,
+    '',
+    'Warm regards,',
+    'Rik Jackson',
+    'The Human Collective',
+    'contact@thehumancollective.ca',
+    '',
+    '---',
+    'You received this email because your business was identified as having growth opportunities in local online search. To stop receiving these emails, reply with "unsubscribe".',
+  ].join('\n')
+}
+
 export function buildEmailHtml(
   category: string | null | undefined,
   opts: TemplateOptions
 ): string {
   const cat = resolveCategory(category)
   const cfg = CATEGORY_CONFIG[cat]
-  const { businessName, siteUrl, content, qrEmbedded, qrUrl } = opts
+  const { businessName, siteUrl, content, qrEmbedded, qrUrl, openTrackingUrl } = opts
+  const linkUrl = opts.clickUrl ?? siteUrl
 
   // The AI body sometimes appends its own sign-off with unfilled placeholders
   // (e.g. "Warm regards, [Your Name] [Your Digital Agency]"). Strip any
@@ -192,24 +230,9 @@ export function buildEmailHtml(
               <table cellpadding="0" cellspacing="0" style="margin:28px 0 16px;">
                 <tr>
                   <td style="border-radius:8px;background:${cfg.accent};">
-                    <a href="${siteUrl}"
+                    <a href="${linkUrl}"
                        style="display:inline-block;padding:14px 32px;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;">
                       ${content.ctaText}
-                    </a>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Secondary CTA: Schedule a meeting -->
-              <p style="margin:0 0 8px;color:#64748b;font-size:13px;">
-                Prefer to talk it through? Book a free 30-minute call:
-              </p>
-              <table cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
-                <tr>
-                  <td style="border-radius:8px;border:2px solid ${cfg.accent};">
-                    <a href="${CALENDLY_URL}"
-                       style="display:inline-block;padding:12px 28px;color:${cfg.accent};font-size:14px;font-weight:600;text-decoration:none;border-radius:8px;">
-                      📅 Schedule a Meeting
                     </a>
                   </td>
                 </tr>
@@ -219,12 +242,11 @@ export function buildEmailHtml(
                 Or copy this link into your browser:
               </p>
               <p style="margin:0 0 16px;font-size:12px;">
-                <a href="${siteUrl}" style="color:${cfg.accent};word-break:break-all;">${siteUrl}</a>
+                <a href="${linkUrl}" style="color:${cfg.accent};word-break:break-all;">${siteUrl}</a>
               </p>
 
               <p style="margin:0 0 24px;color:#64748b;font-size:13px;line-height:1.6;">
-                Having trouble with the links above? Just reply to this email, or reach us directly at
-                <a href="mailto:${REPLY_TO_EMAIL}" style="color:${cfg.accent};">${REPLY_TO_EMAIL}</a>.
+                Having trouble with the links above? Just reply to this email.
               </p>
 
               ${
@@ -265,6 +287,11 @@ export function buildEmailHtml(
       </td>
     </tr>
   </table>
+  ${
+    openTrackingUrl
+      ? `<img src="${openTrackingUrl}" width="1" height="1" alt="" style="display:block;width:1px;height:1px;border:0;opacity:0;" />`
+      : ''
+  }
 </body>
 </html>`
 }

@@ -2,7 +2,8 @@ import { prisma } from '../../lib/prisma'
 import { supabase } from '../../lib/supabase'
 import { openai } from '../../lib/openai'
 import { createTransporter, isEmailEnabled } from '../../lib/email'
-import { buildEmailHtml, REPLY_TO_EMAIL, type EmailContent } from '../../lib/emailTemplates'
+import { buildEmailHtml, buildEmailText, CONTACT_EMAIL, type EmailContent } from '../../lib/emailTemplates'
+import { buildEmailOpenTrackingUrl, buildSiteClickTrackingUrl } from '../../lib/emailTracking'
 import type { EmailJobData } from '../queues'
 
 async function generateEmailContent(
@@ -54,6 +55,23 @@ Return JSON with exactly these fields:
   }
 }
 
+// Nodemailer returns the SMTP server's verdict on each recipient. Logging it means a
+// silently-spam-filtered send is still visible here as accepted-but-not-inboxed, and a
+// hard reject shows up with the server's exact reason instead of a bare "Completed".
+function logSmtpResult(
+  kind: string,
+  recipient: string,
+  info: { messageId?: string; accepted?: unknown[]; rejected?: unknown[]; response?: string }
+): void {
+  const accepted = info.accepted?.length ?? 0
+  const rejected = info.rejected ?? []
+  console.log(
+    `[EmailWorker] ${kind} sent to ${recipient} — id=${info.messageId ?? 'n/a'} accepted=${accepted}` +
+      (rejected.length ? ` REJECTED=[${rejected.join(', ')}]` : '') +
+      (info.response ? ` response="${info.response}"` : '')
+  )
+}
+
 async function fetchQrBuffer(businessId: string): Promise<Buffer | undefined> {
   try {
     const { data, error } = await supabase.storage
@@ -94,10 +112,25 @@ export async function processEmailJob(data: EmailJobData): Promise<void> {
 
   const transporter = createTransporter()
   const fromAddress = process.env.SMTP_FROM ?? 'The Human Collective <contact@thehumancollective.ca>'
+  // A List-Unsubscribe header is expected by Gmail/Outlook for bulk/outreach mail and
+  // materially improves inbox placement. We only support reply-to-unsubscribe, so use mailto.
+  const unsubscribeHeaders = {
+    'List-Unsubscribe': `<mailto:${CONTACT_EMAIL}?subject=unsubscribe>`,
+  }
   const qrBuffer = await fetchQrBuffer(businessId)
   const attachments = qrBuffer
     ? [{ filename: 'preview-qr.png', content: qrBuffer, cid: 'qr-code', contentType: 'image/png' }]
     : []
+  const openTrackingUrl = buildEmailOpenTrackingUrl(businessId)
+  const clickUrl = buildSiteClickTrackingUrl(businessId)
+  const isTest = Boolean(testEmailOverride)
+
+  const emailTemplateOpts = {
+    businessName: business.name,
+    siteUrl: business.websiteGen.siteUrl,
+    clickUrl,
+    openTrackingUrl,
+  }
 
   if (type === 'REMINDER') {
     const subject = `⏰ Your free website preview expires soon — ${business.name}`
@@ -110,22 +143,33 @@ export async function processEmailJob(data: EmailJobData): Promise<void> {
     }
 
     const html = buildEmailHtml(business.category, {
-      businessName: business.name,
-      siteUrl: business.websiteGen.siteUrl,
+      ...emailTemplateOpts,
       content: reminderContent,
       qrEmbedded: !!qrBuffer,
     })
+    const text = buildEmailText({
+      businessName: business.name,
+      siteUrl: business.websiteGen.siteUrl,
+      content: reminderContent,
+    })
 
-    await transporter.sendMail({ from: fromAddress, replyTo: REPLY_TO_EMAIL, to: recipient, subject, html, attachments })
+    const reminderInfo = await transporter.sendMail({ from: fromAddress, to: recipient, subject, html, text, attachments, headers: unsubscribeHeaders })
+    logSmtpResult('REMINDER', recipient, reminderInfo)
 
-    // Skip DB writes in test mode so we don't mark real businesses as emailed.
-    if (!testEmailOverride) {
-      await prisma.emailLog.upsert({
-        where: { businessId },
-        create: { businessId, toEmail: recipient, subject, bodyHtml: html, status: 'SENT', sentAt: new Date() },
-        update: { status: 'SENT', sentAt: new Date() },
-      })
-    }
+    // Test sends log opens/clicks but don't mark the business as contacted.
+    await prisma.emailLog.upsert({
+      where: { businessId },
+      create: {
+        businessId,
+        toEmail: recipient,
+        subject,
+        bodyHtml: html,
+        status: 'SENT',
+        sentAt: new Date(),
+        isTest,
+      },
+      update: { toEmail: recipient, subject, bodyHtml: html, status: 'SENT', sentAt: new Date(), isTest, openedAt: null, openCount: 0 },
+    })
     return
   }
 
@@ -140,34 +184,47 @@ export async function processEmailJob(data: EmailJobData): Promise<void> {
   )
 
   const html = buildEmailHtml(business.category, {
-    businessName: business.name,
-    siteUrl: business.websiteGen.siteUrl,
+    ...emailTemplateOpts,
     content,
     qrEmbedded: !!qrBuffer,
   })
+  const text = buildEmailText({
+    businessName: business.name,
+    siteUrl: business.websiteGen.siteUrl,
+    content,
+  })
 
-  await transporter.sendMail({
+  const info = await transporter.sendMail({
     from: fromAddress,
-    replyTo: REPLY_TO_EMAIL,
     to: recipient,
     subject: content.subject,
     html,
+    text,
     attachments,
+    headers: unsubscribeHeaders,
   })
-
-  // Skip DB writes in test mode so we don't mark real businesses as emailed.
-  if (testEmailOverride) return
+  logSmtpResult('OUTREACH', recipient, info)
 
   await prisma.emailLog.upsert({
     where: { businessId },
-    create: { businessId, toEmail: recipient, subject: content.subject, bodyHtml: html, status: 'SENT', sentAt: new Date() },
-    update: { subject: content.subject, bodyHtml: html, status: 'SENT', sentAt: new Date() },
+    create: {
+      businessId,
+      toEmail: recipient,
+      subject: content.subject,
+      bodyHtml: html,
+      status: 'SENT',
+      sentAt: new Date(),
+      isTest,
+    },
+    update: { toEmail: recipient, subject: content.subject, bodyHtml: html, status: 'SENT', sentAt: new Date(), isTest, openedAt: null, openCount: 0 },
   })
 
-  await prisma.business.update({
-    where: { id: businessId },
-    data: { crmStatus: 'EMAIL_SENT' },
-  })
+  if (!isTest) {
+    await prisma.business.update({
+      where: { id: businessId },
+      data: { crmStatus: 'EMAIL_SENT' },
+    })
+  }
 }
 
 export async function handleEmailFailure(businessId: string, errorMsg: string): Promise<void> {

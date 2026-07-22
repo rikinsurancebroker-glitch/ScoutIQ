@@ -20,13 +20,15 @@ router.get('/', async (req: Request, res: Response) => {
     ? { uploadId, upload: { userId } }
     : { upload: { userId } }
 
-  const scoreThreshold = parseInt(process.env.SCORE_THRESHOLD ?? '50')
+  const scoreThreshold = parseInt(process.env.SCORE_THRESHOLD ?? '70')
 
   const [
     totalBusinesses,
     scored,
     opportunities,
     emailsSent,
+    emailsOpened,
+    sitesClicked,
     won,
     avgScoreResult,
     noWebsite,
@@ -45,8 +47,23 @@ router.get('/', async (req: Request, res: Response) => {
       },
     }),
 
-    prisma.business.count({
-      where: { ...uploadFilter, crmStatus: 'EMAIL_SENT' },
+    prisma.emailLog.count({
+      where: { status: 'SENT', isTest: false, business: uploadFilter },
+    }),
+
+    prisma.emailLog.count({
+      where: { status: 'SENT', isTest: false, openCount: { gt: 0 }, business: uploadFilter },
+    }),
+
+    prisma.emailLog.count({
+      where: {
+        status: 'SENT',
+        isTest: false,
+        business: {
+          ...uploadFilter,
+          websiteGen: { firstViewAt: { not: null } },
+        },
+      },
     }),
 
     prisma.business.count({
@@ -79,6 +96,8 @@ router.get('/', async (req: Request, res: Response) => {
     scored,
     opportunities,
     emailsSent,
+    emailsOpened,
+    sitesClicked,
     won,
     avgScore: Math.round((avgScoreResult._avg.total ?? 0) * 10) / 10,
     noWebsite,

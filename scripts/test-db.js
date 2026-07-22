@@ -17,9 +17,15 @@ async function test(label, url) {
 }
 
 async function main() {
-  await test('DATABASE_URL', process.env.DATABASE_URL)
+  const okDb = await test('DATABASE_URL', process.env.DATABASE_URL)
+  let okDirect = true
   if (process.env.DIRECT_URL && process.env.DIRECT_URL !== process.env.DATABASE_URL) {
-    await test('DIRECT_URL', process.env.DIRECT_URL)
+    okDirect = await test('DIRECT_URL', process.env.DIRECT_URL)
+  }
+  if (!okDb || !okDirect) {
+    console.log('\nTip: if pooler hosts fail but Supabase REST works, switch to the direct')
+    console.log('db.<project-ref>.supabase.co URL (username postgres, add ?sslmode=require).')
+    process.exit(1)
   }
 }
 

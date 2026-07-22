@@ -13,10 +13,15 @@ const QUEUE_CONFIG: PgBoss.Queue[] = [
 let boss: PgBoss | null = null
 
 function getConnectionString(): string {
-  // Prefer pooler URL — works on more networks than direct db.*.supabase.co
+  // pg-boss needs a session-capable Postgres URL (not the transaction pooler on :6543).
   const url = process.env.PG_BOSS_URL ?? process.env.DIRECT_URL
   if (!url) {
     throw new Error('DATABASE_URL is required for the job queue')
+  }
+  // pg v8 treats sslmode=require as verify-full; Supabase's cert chain fails that check.
+  // Prisma is fine with sslmode=require, but pg-boss (node-pg) needs libpq semantics.
+  if (url.includes('sslmode=require') && !url.includes('uselibpqcompat=true')) {
+    return url.replace('sslmode=require', 'uselibpqcompat=true&sslmode=require')
   }
   return url
 }

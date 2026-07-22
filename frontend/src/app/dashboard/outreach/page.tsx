@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { adminApi, type OutreachBusiness } from '@/lib/api'
+import { adminApi, dashboardApi, type OutreachBusiness } from '@/lib/api'
 import { Header } from '@/components/layout/Header'
 import {
   Mail,
@@ -258,10 +258,19 @@ function PreviewModal({
 
 // ─── Badges ──────────────────────────────────────────────────────────────────
 
-function EmailStatusBadge({ status }: { status: string | null | undefined }) {
+function EmailStatusBadge({
+  status,
+  openedAt,
+}: {
+  status: string | null | undefined
+  openedAt?: string | null
+}) {
   if (!status) return <span className="text-xs text-slate-400">—</span>
   const map: Record<string, { label: string; className: string }> = {
-    SENT: { label: 'Sent', className: 'bg-green-100 text-green-700' },
+    SENT: {
+      label: openedAt ? 'Opened' : 'Sent',
+      className: openedAt ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700',
+    },
     PENDING: { label: 'Pending', className: 'bg-yellow-100 text-yellow-700' },
     FAILED: { label: 'Failed', className: 'bg-red-100 text-red-700' },
     BOUNCED: { label: 'Bounced', className: 'bg-orange-100 text-orange-700' },
@@ -299,6 +308,11 @@ export default function OutreachPage() {
   const { data: businesses = [], isLoading } = useQuery({
     queryKey: ['outreach-ready'],
     queryFn: adminApi.outreachReady,
+  })
+
+  const { data: stats } = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: () => dashboardApi.stats(),
   })
 
   const { mutate: sendEmails, isPending: isSending } = useMutation({
@@ -372,6 +386,25 @@ export default function OutreachPage() {
             <XCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
           )}
           {toast.msg}
+        </div>
+      )}
+
+      {/* Outreach funnel */}
+      {stats && stats.emailsSent > 0 && (
+        <div className="bg-gradient-to-r from-indigo-50 to-teal-50 border border-indigo-100 rounded-xl px-5 py-4 mb-6">
+          <p className="text-xs font-semibold uppercase tracking-wider text-indigo-500 mb-2">
+            Outreach funnel (approximate)
+          </p>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-slate-700">
+            <span className="font-semibold">{stats.emailsSent} sent</span>
+            <span className="text-slate-400">→</span>
+            <span className="font-semibold">{stats.emailsOpened} opened</span>
+            <span className="text-slate-400">→</span>
+            <span className="font-semibold">{stats.sitesClicked} clicked site</span>
+          </div>
+          <p className="text-xs text-slate-500 mt-2">
+            Opens are tracked via a pixel (mail clients may block or prefetch images). Site clicks are recorded when they scan the QR or open the preview link.
+          </p>
         </div>
       )}
 
@@ -489,8 +522,8 @@ export default function OutreachPage() {
                 <p className="text-xs text-amber-600 flex items-center gap-1.5">
                   <AlertCircle className="w-3.5 h-3.5" />
                   All {selected.size} selected email{selected.size !== 1 ? 's' : ''} will go to{' '}
-                  <span className="font-medium">{testEmail.trim()}</span>. Real businesses won&apos;t be marked as
-                  emailed.
+                  <span className="font-medium">{testEmail.trim()}</span>. Opens and site clicks are tracked on the
+                  business page; the business won&apos;t be marked as emailed.
                 </p>
               )}
             </div>
@@ -564,7 +597,7 @@ export default function OutreachPage() {
                   </td>
                   <td className="px-4 py-3 text-slate-600 text-xs">{biz.email ?? '—'}</td>
                   <td className="px-4 py-3 text-center">
-                    <EmailStatusBadge status={biz.emailLog?.status} />
+                    <EmailStatusBadge status={biz.emailLog?.status} openedAt={biz.emailLog?.openedAt} />
                   </td>
                   <td className="px-4 py-3 text-center">
                     {biz.websiteGen ? (

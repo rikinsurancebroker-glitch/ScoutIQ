@@ -111,6 +111,8 @@ router.get('/', async (req: Request, res: Response) => {
           select: {
             status: true,
             sentAt: true,
+            openedAt: true,
+            openCount: true,
           },
         },
       },

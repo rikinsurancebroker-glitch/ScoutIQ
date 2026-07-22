@@ -51,7 +51,11 @@ export async function registerWorkers(): Promise<void> {
     }
   })
 
-  await registerWorkerPool<ScoreJobData>(boss, QUEUE_NAMES.SCORING, 10, async (data) => {
+  // Scoring is fast/pure-CPU but fires ~4-5 quick queries per job. At high
+  // concurrency this stampedes Supabase's pooler (shared with the API's Prisma
+  // pool), causing connection resets / P2024 timeouts. Keep it aligned with the
+  // Prisma connection_limit in DATABASE_URL.
+  await registerWorkerPool<ScoreJobData>(boss, QUEUE_NAMES.SCORING, 5, async (data) => {
     await processScoreJob(data)
   })
 
@@ -78,7 +82,7 @@ export async function registerWorkers(): Promise<void> {
   }
 
   console.log('[ParseWorker] Started — concurrency 2')
-  console.log('[ScoreWorker] Started — concurrency 10')
+  console.log('[ScoreWorker] Started — concurrency 5')
   console.log('[WebsiteGenWorker] Started — concurrency 3')
   console.log('[Workers] All job workers registered (pg-boss / Postgres)')
 }

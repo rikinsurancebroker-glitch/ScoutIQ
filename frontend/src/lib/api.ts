@@ -79,6 +79,9 @@ export interface WebsiteGenSummary {
 export interface EmailLogSummary {
   status: EmailStatus
   sentAt: string | null
+  openedAt: string | null
+  openCount: number
+  isTest?: boolean
 }
 
 export interface Business {
@@ -118,6 +121,7 @@ export interface BusinessDetail extends Business {
   emailLog: (EmailLogSummary & {
     subject: string
     toEmail: string
+    isTest?: boolean
   }) | null
   upload: { id: string; fileName: string; status: UploadStatus }
 }
@@ -132,6 +136,8 @@ export interface DashboardStats {
   scored: number
   opportunities: number
   emailsSent: number
+  emailsOpened: number
+  sitesClicked: number
   won: number
   avgScore: number
   noWebsite: number
@@ -221,7 +227,7 @@ export interface OutreachBusiness {
   crmStatus: CrmStatus
   presenceScore: { total: number } | null
   websiteGen: { siteUrl: string; status: SiteStatus; expiresAt: string } | null
-  emailLog: { status: EmailStatus; sentAt: string | null } | null
+  emailLog: { status: EmailStatus; sentAt: string | null; openedAt: string | null; openCount: number } | null
 }
 
 export const adminApi = {

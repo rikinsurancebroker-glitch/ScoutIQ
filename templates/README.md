@@ -44,11 +44,14 @@ Restart API + workers after changing.
 ```bash
 cd templates/apps/scoutiq-retail-01
 cp .env.example .env.local
-npm install
 npm run dev
 ```
 
-Open: `http://localhost:3016/{businessId}`
+`npm run dev` installs dependencies automatically (via `predev`). Always use **`npm run dev`**, not a globally installed `next` CLI — a global Next 15 install will break local Next 14 templates.
+
+Open: `http://localhost:3016/` — **no business ID needed** (shows sample design preview).
+
+For a **live** preview with real AI-generated content from your database, use `http://localhost:3016/{businessId}`.
 
 Replace `{businessId}` with a real ID from your database (one that has `GeneratedWebsite` + `contentJson`).
 

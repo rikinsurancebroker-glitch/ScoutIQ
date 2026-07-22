@@ -6,19 +6,61 @@ import type { EmailJobData } from '../queues/queues'
 import { openai } from '../lib/openai'
 import { buildEmailHtml } from '../lib/emailTemplates'
 import type { EmailContent } from '../lib/emailTemplates'
+import { buildEmailOpenTrackingUrl, buildSiteClickTrackingUrl } from '../lib/emailTracking'
 import { createTransporter, isEmailEnabled } from '../lib/email'
+import QRCode from 'qrcode'
+import { supabase } from '../lib/supabase'
+import { env } from '../config/env'
 
 const router = Router()
 
 router.use(requireAuth)
 
 /**
- * POST /api/admin/backfill-websites?threshold=60
+ * POST /api/admin/refresh-qr
+ * Re-bakes the QR PNG for every existing generated website using the CURRENT
+ * env.API_URL. Older QRs were baked with a localhost API_URL and got stored in
+ * Supabase; they keep redirecting scanners to localhost until re-generated.
+ * This only rewrites the PNG (no OpenAI/site regeneration), so it's fast + safe.
+ */
+router.post('/refresh-qr', async (_req: Request, res: Response) => {
+  const sites = await prisma.generatedWebsite.findMany({
+    where: { deletedAt: null },
+    select: { businessId: true },
+  })
+
+  if (sites.length === 0) {
+    res.json({ refreshed: 0, message: 'No generated websites found.' })
+    return
+  }
+
+  let refreshed = 0
+  const failures: { businessId: string; error: string }[] = []
+
+  for (const { businessId } of sites) {
+    try {
+      const trackingUrl = `${env.API_URL}/s/${businessId}`
+      const qrBuffer = await QRCode.toBuffer(trackingUrl, { type: 'png', width: 300, margin: 2 })
+      const { error } = await supabase.storage
+        .from('generated-sites')
+        .upload(`qr/${businessId}/qr.png`, qrBuffer, { contentType: 'image/png', upsert: true })
+      if (error) throw new Error(error.message)
+      refreshed++
+    } catch (err) {
+      failures.push({ businessId, error: (err as Error).message })
+    }
+  }
+
+  res.json({ refreshed, total: sites.length, apiUrl: env.API_URL, failures })
+})
+
+/**
+ * POST /api/admin/backfill-websites?threshold=70
  * Enqueues website generation for all businesses scored below `threshold`
  * that don't already have a GeneratedWebsite record.
  */
 router.post('/backfill-websites', async (req: Request, res: Response) => {
-  const threshold = parseInt((req.query['threshold'] as string) ?? '60')
+  const threshold = parseInt((req.query['threshold'] as string) ?? '70')
 
   const targets = await prisma.business.findMany({
     where: {
@@ -70,7 +112,7 @@ router.get('/outreach-ready', async (req: Request, res: Response) => {
       crmStatus: true,
       presenceScore: { select: { total: true } },
       websiteGen: { select: { siteUrl: true, status: true, expiresAt: true } },
-      emailLog: { select: { status: true, sentAt: true } },
+      emailLog: { select: { status: true, sentAt: true, openedAt: true, openCount: true } },
     },
     orderBy: { createdAt: 'desc' },
   })
@@ -334,6 +376,8 @@ router.post('/send-test-email/:businessId', async (req: Request, res: Response) 
   const html = buildEmailHtml(business.category, {
     businessName: business.name,
     siteUrl: business.websiteGen.siteUrl,
+    clickUrl: buildSiteClickTrackingUrl(businessId),
+    openTrackingUrl: buildEmailOpenTrackingUrl(businessId),
     content: {
       subject: subject.trim(),
       bodyHtml: bodyHtml ?? '',
@@ -346,6 +390,30 @@ router.post('/send-test-email/:businessId', async (req: Request, res: Response) 
     const transporter = createTransporter()
     const fromAddress = process.env['SMTP_FROM'] ?? 'The Human Collective <contact@thehumancollective.ca>'
     const info = await transporter.sendMail({ from: fromAddress, to: recipient, subject: subject.trim(), html })
+
+    await prisma.emailLog.upsert({
+      where: { businessId },
+      create: {
+        businessId,
+        toEmail: recipient,
+        subject: subject.trim(),
+        bodyHtml: html,
+        status: 'SENT',
+        sentAt: new Date(),
+        isTest: true,
+      },
+      update: {
+        toEmail: recipient,
+        subject: subject.trim(),
+        bodyHtml: html,
+        status: 'SENT',
+        sentAt: new Date(),
+        isTest: true,
+        openedAt: null,
+        openCount: 0,
+      },
+    })
+
     res.json({ sent: true, to: recipient, messageId: info.messageId })
   } catch (err) {
     res.status(500).json({ error: `Failed to send: ${(err as Error).message}` })

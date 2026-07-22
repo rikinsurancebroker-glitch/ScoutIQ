@@ -119,17 +119,26 @@ export function BusinessTable({ businesses, queryKey }: BusinessTableProps) {
                 {/* Email */}
                 <td className="px-4 py-3">
                   {b.emailLog ? (
-                    <Badge
-                      className={
-                        b.emailLog.status === 'SENT'
-                          ? 'bg-green-100 text-green-700'
-                          : b.emailLog.status === 'FAILED'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-amber-100 text-amber-700'
-                      }
-                    >
-                      {b.emailLog.status.charAt(0) + b.emailLog.status.slice(1).toLowerCase()}
-                    </Badge>
+                    <div className="space-y-1">
+                      <Badge
+                        className={
+                          b.emailLog.status === 'SENT'
+                            ? 'bg-green-100 text-green-700'
+                            : b.emailLog.status === 'FAILED'
+                            ? 'bg-red-100 text-red-700'
+                            : 'bg-amber-100 text-amber-700'
+                        }
+                      >
+                        {b.emailLog.status.charAt(0) + b.emailLog.status.slice(1).toLowerCase()}
+                      </Badge>
+                      {b.emailLog.status === 'SENT' && (
+                        <p className="text-[11px] text-slate-400">
+                          {b.emailLog.openedAt ? 'Opened' : 'Unopened'}
+                          {' · '}
+                          {b.websiteGen?.firstViewAt ? 'Clicked site' : 'No click'}
+                        </p>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-slate-300 text-xs">—</span>
                   )}

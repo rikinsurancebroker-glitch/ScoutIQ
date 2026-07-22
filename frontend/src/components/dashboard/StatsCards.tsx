@@ -1,4 +1,4 @@
-import { Building2, CheckCircle2, Target, Mail, Trophy, TrendingUp, Globe, Loader2 } from 'lucide-react'
+import { Building2, CheckCircle2, Target, Mail, Trophy, TrendingUp, Globe } from 'lucide-react'
 import type { DashboardStats } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
@@ -103,7 +103,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       <StatCard
         label="Emails Sent"
         value={stats.emailsSent.toLocaleString()}
-        sub="personalised outreach"
+        sub={`${stats.emailsOpened} opened · ${stats.sitesClicked} clicked site`}
         icon={Mail}
         iconBg="bg-green-100"
         iconColor="text-green-600"
@@ -125,10 +125,10 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
         iconColor="text-red-600"
       />
       <StatCard
-        label="Pipeline Score"
-        value={`${stats.emailsSent > 0 ? Math.min(100, Math.round((stats.won / Math.max(1, stats.opportunities)) * 100)) : 0}%`}
-        sub="won / opportunities"
-        icon={Loader2}
+        label="Outreach Funnel"
+        value={`${stats.emailsSent} → ${stats.emailsOpened} → ${stats.sitesClicked}`}
+        sub="sent → opened → clicked"
+        icon={Mail}
         iconBg="bg-teal-100"
         iconColor="text-teal-600"
       />

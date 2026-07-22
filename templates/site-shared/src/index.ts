@@ -1,4 +1,6 @@
 export { SitePage } from './SitePage'
+export { PreviewSitePage } from './PreviewSitePage'
+export { buildMockSiteContent } from './mockContent'
 export { fetchSiteContent } from './fetch'
 export type { SiteContentResult } from './fetch'
 export { ExpiredPage, UnavailablePage, Nav, Footer } from './components/Footer'

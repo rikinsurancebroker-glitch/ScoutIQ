@@ -18,7 +18,7 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().optional(),
   PORT: z.string().default('4000'),
-  SCORE_THRESHOLD: z.string().default('50'),
+  SCORE_THRESHOLD: z.string().default('70'),
   SITE_EXPIRY_DAYS: z.string().default('7'),
   // When 'false', generated previews never expire: the cleanup + reminder crons
   // don't run, so no site is ever marked EXPIRED. Flip back to 'true' to re-enable.

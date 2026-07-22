@@ -98,9 +98,10 @@ for (const app of APPS) {
         version: '1.0.0',
         private: true,
         scripts: {
-          dev: `next dev -p ${app.port}`,
-          build: 'next build',
-          start: `next start -p ${app.port}`,
+          predev: 'node ../../scripts/ensure-deps.mjs',
+          dev: `node ./node_modules/next/dist/bin/next dev -p ${app.port}`,
+          build: `npm install --prefix ../../site-shared && node ./node_modules/next/dist/bin/next build`,
+          start: `node ./node_modules/next/dist/bin/next start -p ${app.port}`,
         },
         dependencies: {
           '@scoutiq/site-shared': 'file:../../site-shared',
@@ -220,6 +221,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>{children}</body>
     </html>
+  )
+}
+`
+  )
+
+  write(
+    path.join(root, 'src/app/page.tsx'),
+    `export default function HomePage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-6">
+      <div className="max-w-md text-center">
+        <p className="text-indigo-400 text-xs font-semibold uppercase tracking-[0.3em] mb-4">
+          ScoutIQ Preview
+        </p>
+        <h1 className="text-3xl font-bold text-white mb-4">${app.themeId} template</h1>
+        <p className="text-slate-400 mb-4 leading-relaxed">
+          Open a preview at <code className="text-indigo-200">/{'{businessId}'}</code> using an ID from your dashboard.
+        </p>
+        <p className="text-slate-500 text-sm">
+          Example: <code className="text-slate-300">http://localhost:${app.port}/your-business-id</code>
+        </p>
+      </div>
+    </div>
   )
 }
 `

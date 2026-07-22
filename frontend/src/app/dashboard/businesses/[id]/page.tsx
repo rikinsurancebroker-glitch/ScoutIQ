@@ -276,6 +276,25 @@ export default function BusinessDetailPage() {
                 <InfoRow label="Sent to" value={business.emailLog.toEmail} />
                 <InfoRow label="Subject" value={business.emailLog.subject} />
                 <InfoRow label="Sent at" value={formatDateTime(business.emailLog.sentAt)} />
+                {business.emailLog.isTest && (
+                  <InfoRow label="Type" value="Test send (not counted in dashboard funnel)" />
+                )}
+                <InfoRow
+                  label="Opened"
+                  value={
+                    business.emailLog.openedAt
+                      ? `${formatDateTime(business.emailLog.openedAt)} (${business.emailLog.openCount}×)`
+                      : 'Not yet'
+                  }
+                />
+                <InfoRow
+                  label="Site clicked"
+                  value={
+                    business.websiteGen?.firstViewAt
+                      ? `${formatDateTime(business.websiteGen.firstViewAt)} · ${business.websiteGen.viewCount} view${business.websiteGen.viewCount === 1 ? '' : 's'}`
+                      : 'Not yet'
+                  }
+                />
               </CardContent>
             </Card>
           )}

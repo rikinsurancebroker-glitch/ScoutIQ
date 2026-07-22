@@ -3,7 +3,7 @@ import { scoreBusiness } from '../../services/scoringService'
 import { enqueueWebsiteGen } from '../queues'
 import type { ScoreJobData } from '../queues'
 
-const SCORE_THRESHOLD = parseInt(process.env.SCORE_THRESHOLD ?? '50')
+const SCORE_THRESHOLD = parseInt(process.env.SCORE_THRESHOLD ?? '70')
 
 export async function processScoreJob(data: ScoreJobData): Promise<void> {
   const { businessId, uploadId } = data

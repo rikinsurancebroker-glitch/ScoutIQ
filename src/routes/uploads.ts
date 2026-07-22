@@ -109,7 +109,7 @@ router.get('/:id/status', async (req: Request, res: Response) => {
     return
   }
 
-  const scoreThreshold = parseInt(process.env.SCORE_THRESHOLD ?? '50')
+  const scoreThreshold = parseInt(process.env.SCORE_THRESHOLD ?? '70')
 
   const [businessCount, scored, opportunities, generated] = await Promise.all([
     prisma.business.count({ where: { uploadId: id } }),
