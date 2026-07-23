@@ -28,16 +28,26 @@ app.use(
   })
 )
 
+import { PRODUCTION_URLS } from './config/templates'
+
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  ...Object.values(PRODUCTION_URLS),
 ].filter(Boolean).map((o) => o!.replace(/\/$/, ''))
+
+function isAllowedPreviewOrigin(origin: string): boolean {
+  const normalized = origin.replace(/\/$/, '')
+  if (allowedOrigins.includes(normalized)) return true
+  // Vercel preview deployments for template apps (scoutiq-gym-01.vercel.app, etc.)
+  return /^https:\/\/scoutiq-[a-z0-9-]+\.vercel\.app$/i.test(normalized)
+}
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // allow non-browser requests (curl, Postman, server-to-server)
       if (!origin) return callback(null, true)
-      if (allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+      if (isAllowedPreviewOrigin(origin.replace(/\/$/, ''))) {
         return callback(null, true)
       }
       return callback(new Error(`CORS: origin ${origin} not allowed`))

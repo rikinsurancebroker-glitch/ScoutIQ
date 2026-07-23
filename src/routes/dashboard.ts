@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express'
 import { prisma } from '../lib/prisma'
+import { asyncHandler } from '../lib/asyncHandler'
 import { requireAuth } from '../middleware/auth'
 
 const router = Router()
@@ -12,7 +13,7 @@ function qstr(val: unknown): string | undefined {
   return undefined
 }
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId
   const uploadId = qstr(req.query['uploadId'])
 
@@ -22,17 +23,13 @@ router.get('/', async (req: Request, res: Response) => {
 
   const scoreThreshold = parseInt(process.env.SCORE_THRESHOLD ?? '70')
 
+  // Two batches — a single Promise.all of 10 queries stampedes a small pool.
   const [
     totalBusinesses,
     scored,
     opportunities,
     emailsSent,
     emailsOpened,
-    sitesClicked,
-    won,
-    avgScoreResult,
-    noWebsite,
-    categoryBreakdown,
   ] = await Promise.all([
     prisma.business.count({ where: uploadFilter }),
 
@@ -54,7 +51,15 @@ router.get('/', async (req: Request, res: Response) => {
     prisma.emailLog.count({
       where: { status: 'SENT', isTest: false, openCount: { gt: 0 }, business: uploadFilter },
     }),
+  ])
 
+  const [
+    sitesClicked,
+    won,
+    avgScoreResult,
+    noWebsite,
+    categoryBreakdown,
+  ] = await Promise.all([
     prisma.emailLog.count({
       where: {
         status: 'SENT',
@@ -106,12 +111,12 @@ router.get('/', async (req: Request, res: Response) => {
       count: c._count.id,
     })),
   })
-})
+}))
 
-router.get('/expiry-stats', async (req: Request, res: Response) => {
-  const userId = req.user!.userId
+router.get('/expiry-stats', asyncHandler(async (_req: Request, res: Response) => {
+  const userId = _req.user!.userId
 
-  const [live, extended, claimed, expired, viewedNotClaimed] = await Promise.all([
+  const [live, extended, claimed] = await Promise.all([
     prisma.generatedWebsite.count({
       where: { status: 'LIVE', business: { upload: { userId } } },
     }),
@@ -123,7 +128,9 @@ router.get('/expiry-stats', async (req: Request, res: Response) => {
     prisma.generatedWebsite.count({
       where: { status: 'CLAIMED', business: { upload: { userId } } },
     }),
+  ])
 
+  const [expired, viewedNotClaimed] = await Promise.all([
     prisma.generatedWebsite.count({
       where: { status: 'EXPIRED', business: { upload: { userId } } },
     }),
@@ -139,6 +146,6 @@ router.get('/expiry-stats', async (req: Request, res: Response) => {
   ])
 
   res.json({ live, extended, claimed, expired, viewedNotClaimed })
-})
+}))
 
 export default router

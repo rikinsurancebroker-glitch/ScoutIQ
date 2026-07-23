@@ -49,7 +49,7 @@ export async function getBoss(): Promise<PgBoss> {
     // worker each run their own pg-boss instance (and local dev shares that same
     // budget with the deployed services), so keep each pool small — otherwise
     // they collectively exhaust the cap and pg-boss.start() throws EMAXCONNSESSION.
-    max: 3,
+    max: process.env.NODE_ENV === 'development' ? 2 : 3,
   })
 
   instance.on('error', (err) => {

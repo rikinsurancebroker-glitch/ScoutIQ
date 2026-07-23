@@ -52,7 +52,7 @@ export async function fetchSiteContent(businessId: string): Promise<SiteContentR
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
       const res = await fetch(`${apiUrl}/sites/${businessId}/content`, {
-        next: { revalidate: 60 },
+        cache: 'no-store',
         signal: AbortSignal.timeout(ATTEMPT_TIMEOUT_MS),
       })
 

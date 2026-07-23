@@ -5,7 +5,8 @@ import { Services } from './components/Services'
 import { About } from './components/About'
 import { Testimonials } from './components/Testimonials'
 import { Contact } from './components/Contact'
-import { Footer, ExpiredPage, UnavailablePage, Nav } from './components/Footer'
+import { Footer, ExpiredPage, Nav } from './components/Footer'
+import { UnavailablePage } from './components/UnavailablePage'
 import { resolveColors } from './utils'
 
 interface SitePageProps {
@@ -17,7 +18,7 @@ export async function SitePage({ businessId, theme }: SitePageProps) {
   const result = await fetchSiteContent(businessId)
 
   if (result.status === 'unavailable') {
-    return <UnavailablePage />
+    return <UnavailablePage businessId={businessId} />
   }
   if (result.status === 'expired') {
     return <ExpiredPage />

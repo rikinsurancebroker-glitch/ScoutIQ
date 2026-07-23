@@ -275,25 +275,3 @@ export function ExpiredPage() {
     </div>
   )
 }
-
-// ─── Temporarily Unavailable Page ─────────────────────────────────────────────
-// Shown when the backend is unreachable/cold-starting (not expired). Auto-refreshes
-// so the visitor lands on the real preview once the API has woken up.
-
-export function UnavailablePage() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-6">
-      <meta httpEquiv="refresh" content="8" />
-      <div className="text-center max-w-md">
-        <div className="w-20 h-20 rounded-full bg-slate-900 flex items-center justify-center mx-auto mb-6">
-          <span className="text-4xl">☕</span>
-        </div>
-        <h1 className="text-2xl font-bold text-white mb-3">Just a moment…</h1>
-        <p className="text-slate-400">
-          We&apos;re loading this preview. This can take a few seconds the first time — the page
-          will refresh automatically.
-        </p>
-      </div>
-    </div>
-  )
-}

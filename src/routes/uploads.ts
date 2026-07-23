@@ -5,6 +5,7 @@ import { prisma } from '../lib/prisma'
 import { supabase } from '../lib/supabase'
 import { enqueueCsvParse } from '../queues/queues'
 import { requireAuth } from '../middleware/auth'
+import { asyncHandler } from '../lib/asyncHandler'
 import type { ParseJobData } from '../queues/queues'
 
 const router = Router()
@@ -15,7 +16,7 @@ const createUploadSchema = z.object({
   fileName: z.string().min(1, 'fileName is required').endsWith('.csv', 'File must be a CSV'),
 })
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const parsed = createUploadSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.errors[0]?.message ?? 'Validation error' })
@@ -51,9 +52,9 @@ router.post('/', async (req: Request, res: Response) => {
     token: data.token,
     storagePath: upload.storagePath,
   })
-})
+}))
 
-router.post('/:id/confirm', async (req: Request, res: Response) => {
+router.post('/:id/confirm', asyncHandler(async (req: Request, res: Response) => {
   const id = req.params['id'] as string
   const userId = req.user!.userId
 
@@ -78,9 +79,9 @@ router.post('/:id/confirm', async (req: Request, res: Response) => {
   } satisfies ParseJobData)
 
   res.status(202).json({ message: 'Processing started', uploadId: upload.id })
-})
+}))
 
-router.get('/', async (req: Request, res: Response) => {
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId
 
   const uploads = await prisma.upload.findMany({
@@ -94,9 +95,9 @@ router.get('/', async (req: Request, res: Response) => {
   })
 
   res.json(uploads)
-})
+}))
 
-router.get('/:id/status', async (req: Request, res: Response) => {
+router.get('/:id/status', asyncHandler(async (req: Request, res: Response) => {
   const id = req.params['id'] as string
   const userId = req.user!.userId
 
@@ -111,11 +112,14 @@ router.get('/:id/status', async (req: Request, res: Response) => {
 
   const scoreThreshold = parseInt(process.env.SCORE_THRESHOLD ?? '70')
 
-  const [businessCount, scored, opportunities, generated] = await Promise.all([
+  const [businessCount, scored] = await Promise.all([
     prisma.business.count({ where: { uploadId: id } }),
     prisma.presenceScore.count({
       where: { business: { uploadId: id } },
     }),
+  ])
+
+  const [opportunities, generated] = await Promise.all([
     prisma.presenceScore.count({
       where: {
         business: { uploadId: id },
@@ -138,9 +142,9 @@ router.get('/:id/status', async (req: Request, res: Response) => {
     // ("opportunities"), and that happens *after* the upload flips to DONE.
     generated,
   })
-})
+}))
 
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
   const id = req.params['id'] as string
   const userId = req.user!.userId
 
@@ -158,6 +162,6 @@ router.delete('/:id', async (req: Request, res: Response) => {
   await prisma.upload.delete({ where: { id } })
 
   res.json({ message: 'Upload deleted successfully' })
-})
+}))
 
 export default router

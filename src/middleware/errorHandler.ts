@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client'
 import { Request, Response, NextFunction } from 'express'
 
 export class AppError extends Error {
@@ -18,6 +19,16 @@ export function errorHandler(
 ): void {
   if (err instanceof AppError) {
     res.status(err.statusCode).json({ error: err.message })
+    return
+  }
+
+  if (err instanceof Prisma.PrismaClientKnownRequestError && (err.code === 'P2024' || err.code === 'P1001')) {
+    res.status(503).json({
+      error:
+        err.code === 'P1001'
+          ? 'Database temporarily unreachable — Supabase may be under load. Retry in a few seconds.'
+          : 'Database is busy — too many concurrent requests. Retry in a few seconds.',
+    })
     return
   }
 

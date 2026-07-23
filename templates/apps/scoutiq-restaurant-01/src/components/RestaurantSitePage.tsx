@@ -19,7 +19,7 @@ export async function RestaurantSitePage({ businessId }: Props) {
   const result = await fetchSiteContent(businessId)
 
   if (result.status === 'unavailable') {
-    return <UnavailablePage />
+    return <UnavailablePage businessId={businessId} />
   }
   if (result.status === 'expired') {
     return <ExpiredPage />

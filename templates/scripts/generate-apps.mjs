@@ -254,12 +254,37 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     `import { SitePage } from '@scoutiq/site-shared'
 import { ${app.themeImport} } from '@scoutiq/site-shared/themes'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface Props {
   params: { businessId: string }
 }
 
 export default function Page({ params }: Props) {
   return <SitePage businessId={params.businessId} theme={${app.themeImport}} />
+}
+`
+  )
+
+  write(
+    path.join(root, 'src/app/api/site-content/[businessId]/route.ts'),
+    `import { PRODUCTION_API_URL } from '@scoutiq/site-shared'
+
+export const dynamic = 'force-dynamic'
+
+export async function GET(
+  _request: Request,
+  { params }: { params: { businessId: string } }
+): Promise<Response> {
+  const res = await fetch(\`\${PRODUCTION_API_URL}/sites/\${params.businessId}/content\`, {
+    cache: 'no-store',
+  })
+  const body = await res.text()
+  return new Response(body, {
+    status: res.status,
+    headers: { 'Content-Type': res.headers.get('Content-Type') ?? 'application/json' },
+  })
 }
 `
   )
